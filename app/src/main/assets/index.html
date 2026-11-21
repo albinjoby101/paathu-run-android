@@ -31,6 +31,26 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 .shopCard button{width:100%;margin:5px 0}
 .shopCard .shopClose{background:#e7eee2;box-shadow:0 4px 0 #9aa99a}
 .shopNote{display:block;opacity:.8;margin-top:10px}
+
+/* Settings and expanded shop */
+#settingsOpen{position:fixed;left:14px;top:calc(72px + env(safe-area-inset-top,0px));z-index:20;padding:9px 13px;font-size:14px;border-radius:14px;box-shadow:0 3px 0 #5d9632}
+#shopModal,#settingsModal{overflow-y:auto;overscroll-behavior:contain}
+.shopCard{max-height:88vh;overflow-y:auto}
+.shopItem{justify-content:space-between;gap:10px;margin-bottom:10px;padding:12px}
+.shopItemInfo{display:flex;align-items:center;gap:13px;min-width:0}
+.shopItem .hatPreview{width:52px;text-align:center;flex:none}
+.shopItem button{width:auto;min-width:112px;margin:0;padding:10px 12px;font-size:13px;white-space:nowrap}
+.shopItem button:disabled{opacity:.55}
+#settingsModal{display:none;position:fixed;inset:0;z-index:31;align-items:center;justify-content:center;background:#06150fc9;padding:20px}
+.settingsCard{width:min(92vw,380px);max-height:88vh;overflow-y:auto;padding:23px 20px;border-radius:24px;background:linear-gradient(160deg,#315f3c,#183b30);border:2px solid #b7e58a;text-align:center;box-shadow:0 15px 50px #0008}
+.settingsCard h2{margin:0 0 8px;color:#fff2a1;font-size:25px}
+.colourGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.colourChoice{padding:10px 5px;border:2px solid #ffffff55;border-radius:14px;background:#ffffff18;color:white;box-shadow:none;font-size:12px}
+.colourChoice.selected{border-color:#fff36b;background:#ffffff35;box-shadow:0 0 0 2px #fff36b55}
+.colourDot{display:block;width:34px;height:34px;margin:0 auto 6px;border-radius:50%;border:2px solid #ffffffaa}
+.settingsCard button{width:100%;margin:5px 0}
+.settingsCard .shopClose{background:#e7eee2;box-shadow:0 4px 0 #9aa99a}
+
 </style>
 </head>
 <body>
@@ -43,17 +63,23 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
   <div class="sub" id="titleSub">TAP TO PLAY</div>
 </div></div>
 <button id="shopOpen" aria-label="Open shop">🎅 SHOP</button>
+<button id="settingsOpen" aria-label="Open settings">⚙️ SETTINGS</button>
 <div id="shopModal">
  <div class="shopCard">
   <h2>🎄 FOREST SHOP</h2>
   <div class="shopBalance">🪙 <span id="shopCoins">0</span> coins</div>
-  <div class="shopItem">
-   <div class="hatPreview">🎅</div>
-   <div><strong>Christmas Hat</strong><small>For Paathu • 500 coins</small></div>
-  </div>
-  <button id="hatAction">BUY • 500 🪙</button>
+  <div id="shopItems"></div>
   <button id="shopClose" class="shopClose">CLOSE</button>
-  <small class="shopNote">Coins and your hat are saved on this device.</small>
+  <small class="shopNote">Your coins and purchases are saved on this device.</small>
+ </div>
+</div>
+<div id="settingsModal">
+ <div class="settingsCard">
+  <h2>⚙️ PAATHU SETTINGS</h2>
+  <div class="shopBalance">Choose Paathu's colour</div>
+  <div id="colourGrid" class="colourGrid"></div>
+  <div id="goldColourAction"></div>
+  <button id="settingsClose" class="shopClose">CLOSE</button>
  </div>
 </div>
 <div id="controls">
@@ -158,15 +184,31 @@ for(let i=0;i<5;i++){
 // Paathu: use a real, lightweight rigged goat model instead of the old pile of spheres.
 const goat=new THREE.Group(); scene.add(goat); goat.position.set(0,0,3);
 const goatModelRoot=new THREE.Group();goat.add(goatModelRoot);
-const christmasHat=new THREE.Group();
+function makeHatGroup(){const g=new THREE.Group();g.position.set(0,-.30,-.55);g.visible=false;goatModelRoot.add(g);return g;}
+const christmasHat=makeHatGroup();
 const hatBrim=new THREE.Mesh(new THREE.CylinderGeometry(.43,.43,.12,20),mat(0xf6f2e8));
 hatBrim.position.y=2.43;christmasHat.add(hatBrim);
 const hatCone=new THREE.Mesh(new THREE.ConeGeometry(.34,.78,16),mat(0xc92f3b));
 hatCone.position.set(0,2.84,-.04);hatCone.rotation.z=-.12;christmasHat.add(hatCone);
 const hatPom=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),mat(0xffffff));
 hatPom.position.set(-.06,3.24,-.04);christmasHat.add(hatPom);
-christmasHat.position.set(0,-.30,-.55);christmasHat.visible=false;goatModelRoot.add(christmasHat);
-let goatMixer=null, goatModel=null, goatLegNodes=[], goatPartsByName={};
+// British gentleman bowler hat.
+const gentlemanHat=makeHatGroup();
+const gentlemanBrim=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.10,24),mat(0x17191c));
+gentlemanBrim.position.y=2.48;gentlemanHat.add(gentlemanBrim);
+const gentlemanCrown=new THREE.Mesh(new THREE.CylinderGeometry(.34,.39,.55,24),mat(0x202328));
+gentlemanCrown.position.y=2.78;gentlemanHat.add(gentlemanCrown);
+const gentlemanBand=new THREE.Mesh(new THREE.CylinderGeometry(.395,.395,.09,24),mat(0x9b2430));
+gentlemanBand.position.y=2.57;gentlemanHat.add(gentlemanBand);
+// NYPD-style navy police cap with a gold badge.
+const policeHat=makeHatGroup();
+const policeBrim=new THREE.Mesh(new THREE.BoxGeometry(.88,.09,.57),mat(0x111e3b));
+policeBrim.position.set(0,2.48,-.08);policeHat.add(policeBrim);
+const policeCrown=new THREE.Mesh(new THREE.SphereGeometry(.39,20,12),mat(0x17294d));
+policeCrown.scale.set(1,.65,.88);policeCrown.position.set(0,2.70,-.02);policeHat.add(policeCrown);
+const policeBadge=new THREE.Mesh(new THREE.CircleGeometry(.105,6),mat(0xf2c54b));
+policeBadge.position.set(0,2.72,.335);policeBadge.rotation.y=0;policeHat.add(policeBadge);
+let goatMixer=null, goatModel=null, goatLegNodes=[], goatPartsByName={}, goatCoatMaterials=[];
 const head=new THREE.Group(), tail=new THREE.Group(), legs=[];
 const goatLoader=new GLTFLoader();
 goatLoader.load(
@@ -183,18 +225,17 @@ goatLoader.load(
      const mats=Array.isArray(node.material)?node.material:[node.material];
      for(const material of mats){
        if(!material)continue;
-       const label=((node.name||'')+' '+(material.name||'')).toLowerCase();
-       // Keep horns, hooves, eyes and muzzle natural; recolour only coat/fur/body materials.
        if(material.color){
-         // The free goat model uses one shared palette material; tint it toward Paathu purple.
-         material.color.set(0xb34be8);
-         material.needsUpdate=true;
+         // The supplied goat asset uses a shared coat palette. Keep a handle so
+         // the settings menu can recolour it without reloading the model.
+         if(!goatCoatMaterials.includes(material))goatCoatMaterials.push(material);
        }
      }
      if(/FrontUpLeg|FrontLeg|HindUpLeg|HindLeg/.test(node.name||''))goatLegNodes.push(node);
      if(node.name)goatPartsByName[node.name]=node;
    });
    goatModelRoot.add(goatModel);
+   applyGoatColour();
    if(gltf.animations && gltf.animations.length){
      goatMixer=new THREE.AnimationMixer(goatModel);
      gltf.animations.forEach(clip=>goatMixer.clipAction(clip).play());
@@ -338,43 +379,118 @@ function addObstacle(lane,z,type){
  moving.push(g);return g;
 }
 function addCoin(lane,z){let g=new THREE.Group();g.position.set([-1.5,0,1.5][lane],1.25,z);let c=new THREE.Mesh(new THREE.TorusGeometry(.28,.09,8,18),gold);c.rotation.y=Math.PI/2;g.add(c);let dot=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),mat(0xfff1a1));dot.position.z=.02;g.add(dot);g.userData={type:'coin',lane,hit:false};scene.add(g);moving.push(g)}
-let saved={coins:0,hatOwned:false,hatEquipped:false};
+let saved={coins:0,hatOwned:false,hatEquipped:false,ownedHats:[],equippedHat:'',goatColour:'purple',goldColourOwned:false};
 try{
  const stored=localStorage.getItem('paathuRunSave');
  if(stored)saved={...saved,...JSON.parse(stored)};
 }catch(e){console.warn('Could not read saved progress',e)}
 let lane=1, laneLean=0, jumpY=0, jumpV=0, sliding=0, running=false, ended=false, score=0,coins=Math.max(0,Number(saved.coins)||0),speed=15,spawn=0,coinSpawn=0,last=0;
-let hatOwned=!!saved.hatOwned,hatEquipped=!!saved.hatEquipped;
+const hatPrices={christmas:500,gentleman:1000,police:1200};
+const hatNames={christmas:'Christmas Hat',gentleman:'British Gentleman Hat',police:'NYPD Police Hat'};
+const hatIcons={christmas:'🎅',gentleman:'🎩',police:'👮'};
+let ownedHats=Array.isArray(saved.ownedHats)?saved.ownedHats.slice():[];
+if(saved.hatOwned&&!ownedHats.includes('christmas'))ownedHats.push('christmas');
+let equippedHat=saved.equippedHat||((saved.hatEquipped&&ownedHats.includes('christmas'))?'christmas':'');
+if(!ownedHats.includes(equippedHat))equippedHat='';
+let goatColour=saved.goatColour||'purple';
+let goldColourOwned=!!saved.goldColourOwned;
+const goatColours=[
+ {id:'purple',name:'Purple',hex:0xb34be8},
+ {id:'white',name:'White',hex:0xf2eee8},
+ {id:'black',name:'Black',hex:0x29252b},
+ {id:'brown',name:'Brown',hex:0x87502f},
+ {id:'grey',name:'Grey',hex:0x858b91},
+ {id:'gold',name:'Gold',hex:0xd8a928}
+];
+function applyGoatColour(){
+ const choice=goatColours.find(c=>c.id===goatColour)||goatColours[0];
+ goatCoatMaterials.forEach(material=>{
+   if(material.color)material.color.setHex(choice.hex);
+   if(choice.id==='gold'){material.metalness=.62;material.roughness=.28;}
+   else {material.metalness=0;material.roughness=.85;}
+   material.needsUpdate=true;
+ });
+ // The simple fallback goat uses these two shared materials.
+ purple.color.setHex(choice.hex);lightPurple.color.setHex(choice.hex);
+ if(choice.id==='gold'){purple.metalness=.62;purple.roughness=.28;lightPurple.metalness=.62;lightPurple.roughness=.28;}
+ else {purple.metalness=0;purple.roughness=.85;lightPurple.metalness=0;lightPurple.roughness=.85;}
+}
 function saveProgress(){
- const data=JSON.stringify({coins,hatOwned,hatEquipped});
+ const data=JSON.stringify({coins,hatOwned:ownedHats.includes('christmas'),hatEquipped:equippedHat==='christmas',ownedHats,equippedHat,goatColour,goldColourOwned});
  try{localStorage.setItem('paathuRunSave',data);}
  catch(e){console.warn('Browser storage is unavailable; progress may not persist.',e)}
 }
-function refreshShop(){
- document.getElementById('coins').textContent=coins;
- document.getElementById('shopCoins').textContent=coins;
- christmasHat.visible=hatEquipped;
- const action=document.getElementById('hatAction');
- action.textContent=hatEquipped?'EQUIPPED ✓':(hatOwned?'EQUIP HAT':'BUY • 500 🪙');
- action.disabled=!hatOwned&&coins<500;
- action.style.opacity=action.disabled?'.55':'1';
+function applyEquippedHat(){
+ christmasHat.visible=equippedHat==='christmas';
+ gentlemanHat.visible=equippedHat==='gentleman';
+ policeHat.visible=equippedHat==='police';
 }
+function renderShop(){
+ document.getElementById('shopCoins').textContent=coins;
+ const host=document.getElementById('shopItems');host.innerHTML='';
+ Object.keys(hatPrices).forEach(id=>{
+   const owned=ownedHats.includes(id),equipped=equippedHat===id;
+   const item=document.createElement('div');item.className='shopItem';
+   const info=document.createElement('div');info.className='shopItemInfo';
+   const preview=document.createElement('div');preview.className='hatPreview';preview.textContent=hatIcons[id];
+   const desc=document.createElement('div');
+   const strong=document.createElement('strong');strong.textContent=hatNames[id];
+   const small=document.createElement('small');small.textContent='For Paathu • '+hatPrices[id]+' coins';
+   desc.append(strong,small);info.append(preview,desc);
+   const action=document.createElement('button');
+   action.textContent=equipped?'EQUIPPED ✓':(owned?'EQUIP':'BUY • '+hatPrices[id]+' 🪙');
+   action.disabled=!owned&&coins<hatPrices[id];
+   action.addEventListener('click',()=>{
+     if(!ownedHats.includes(id)){
+       if(coins<hatPrices[id])return;
+       coins-=hatPrices[id];ownedHats.push(id);equippedHat=id;
+     }else equippedHat=equipped?'':id;
+     saveProgress();applyEquippedHat();renderShop();say(equippedHat===id?'EQUIPPED!':'HAT REMOVED');
+   });
+   item.append(info,action);host.appendChild(item);
+ });
+ document.getElementById('coins').textContent=coins;
+ applyEquippedHat();
+}
+function renderSettings(){
+ const host=document.getElementById('colourGrid');host.innerHTML='';
+ goatColours.forEach(choice=>{
+   if(choice.id==='gold'&&!goldColourOwned)return;
+   const button=document.createElement('button');button.className='colourChoice'+(goatColour===choice.id?' selected':'');
+   const dot=document.createElement('span');dot.className='colourDot';dot.style.background='#'+choice.hex.toString(16).padStart(6,'0');
+   const label=document.createElement('span');label.textContent=choice.name+(goatColour===choice.id?' ✓':'');
+   button.append(dot,label);
+   button.addEventListener('click',()=>{goatColour=choice.id;applyGoatColour();saveProgress();renderSettings();});
+   host.appendChild(button);
+ });
+ const goldHost=document.getElementById('goldColourAction');goldHost.innerHTML='';
+ if(goldColourOwned){
+   const status=document.createElement('small');status.textContent='✨ Gold colour unlocked!';goldHost.appendChild(status);
+ }else{
+   const buy=document.createElement('button');buy.textContent='UNLOCK GOLD • 1500 🪙';
+   buy.disabled=coins<1500;buy.addEventListener('click',()=>{
+     if(coins<1500)return;coins-=1500;goldColourOwned=true;goatColour='gold';applyGoatColour();saveProgress();renderShop();renderSettings();say('GOLD COLOUR UNLOCKED!');
+   });goldHost.appendChild(buy);
+ }
+}
+function refreshShop(){renderShop();}
 const scoreEl=document.getElementById('score'),coinEl=document.getElementById('coins'),title=document.getElementById('title'),toast=document.getElementById('toast');
 function say(t){toast.textContent=t;toast.style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>toast.style.opacity=0,650)}
 document.getElementById('shopOpen').addEventListener('click',()=>{
  if(running)running=false;
- refreshShop();document.getElementById('shopModal').style.display='flex';
+ renderShop();document.getElementById('shopModal').style.display='flex';
 });
 document.getElementById('shopClose').addEventListener('click',()=>{
  document.getElementById('shopModal').style.display='none';
  if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
 });
-document.getElementById('hatAction').addEventListener('click',()=>{
- if(!hatOwned){
-   if(coins<500)return;
-   coins-=500;hatOwned=true;hatEquipped=true;
- }else hatEquipped=!hatEquipped;
- saveProgress();refreshShop();
+document.getElementById('settingsOpen').addEventListener('click',()=>{
+ if(running)running=false;
+ renderSettings();document.getElementById('settingsModal').style.display='flex';
+});
+document.getElementById('settingsClose').addEventListener('click',()=>{
+ document.getElementById('settingsModal').style.display='none';
+ if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
 });
 function move(d){
  if(!running)return;
@@ -383,7 +499,7 @@ function move(d){
  if(d==='jump'&&jumpY<.05&&sliding<=0)jumpV=8.7;
  if(d==='slide'&&jumpY<.15)sliding=.72;
 }
-refreshShop();
+applyGoatColour();refreshShop();renderSettings();
 addEventListener('pagehide',saveProgress);
 document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();move(b.dataset.move)}));
 let sx=0,sy=0;renderer.domElement.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
