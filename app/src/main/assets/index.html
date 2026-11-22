@@ -715,8 +715,8 @@ renderer.domElement.addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.cl
 addEventListener('keydown',e=>{if(['ArrowLeft','a','ArrowRight','d','ArrowUp','w',' ','ArrowDown','s'].includes(e.key)){e.preventDefault();move(({ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'jump',w:'jump',' ':'jump',ArrowDown:'slide',s:'slide'})[e.key])}});
 function reset(){document.getElementById('pauseOverlay').style.display='none';document.getElementById('hunterWarning').style.display='none';document.getElementById('hunterWarning').textContent='▲ HUNTER AIMING — SWITCH LANE!';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
  overhead.forEach(item=>{item.group.position.z=item.initialZ;});
- trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=58+Math.random()*8;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
-let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
+ trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=nextHunterDelay();hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
+function nextHunterDelay(){return (250+Math.random()*50)/(speed*.65);}let hunterCooldown=nextHunterDelay(),hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
 function start(){
  reset();running=false;title.classList.add('story');document.body.classList.add('playing');document.getElementById('storySkip').style.display='block';title.querySelector('h1').textContent='A QUIET FOREST...';
  document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
@@ -744,7 +744,7 @@ function start(){
    }else{
      hunter.visible=false;document.getElementById('storySkip').style.display='none';
      title.classList.remove('story');title.style.display='none';running=true;
-     hunterCooldown=58+Math.random()*8;hunterPhase='hidden';hunterPhaseTime=0;
+     hunterCooldown=nextHunterDelay();hunterPhase='hidden';hunterPhaseTime=0;
      document.getElementById('hud').style.display='flex';
      document.getElementById('controls').style.display='none';
      last=performance.now();
@@ -754,7 +754,7 @@ function start(){
  }
  requestAnimationFrame(reveal);
 }
-document.getElementById('storySkip').addEventListener('click',()=>{unlockPaathuAudio();startPaathuMusic();document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=58;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='none';last=performance.now();});
+document.getElementById('storySkip').addEventListener('click',()=>{unlockPaathuAudio();startPaathuMusic();document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=nextHunterDelay();hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='none';last=performance.now();});
 document.getElementById('startGameButton').addEventListener('click',()=>{unlockPaathuAudio();startPaathuMusic();if(!running)start()});
 /* Leaderboard button is wired by the account controller below. */
 document.getElementById('titleSettingsButton').addEventListener('click',()=>{renderSettings();document.getElementById('settingsModal').style.display='flex';});
@@ -786,10 +786,10 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
      hunterSight.visible=true;hunterReticle.visible=true;updateHunterSight();
      if(hunterPhaseTime>4.5){document.getElementById('hunterWarning').style.display='none';muzzleFlash.visible=true;playPaathuSfx('shot');setTimeout(()=>{muzzleFlash.visible=false},180);if(lane===hunterTargetLane)crash();hunterPhase='aftershot';hunterPhaseTime=0;}
    }else if(hunterPhase==='aftershot'){
-     hunterSight.visible=false;hunterReticle.visible=false;hunter.position.z=7.0; if(hunterPhaseTime>1.0){hunterShots++;if(hunterShots>=1){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
+     hunterSight.visible=false;hunterReticle.visible=false;hunter.position.z=7.0; if(hunterPhaseTime>1.0){hunterShots++;if(hunterShots>=2){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
    }else if(hunterPhase==='exit'){
      hunterSight.visible=false;hunterReticle.visible=false;document.getElementById('hunterWarning').style.display='none';hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
-     if(hunterPhaseTime>2){hunterPhase='hidden';hunter.visible=false;hunterCooldown=48+Math.random()*12;}
+     if(hunterPhaseTime>2){hunterPhase='hidden';hunter.visible=false;hunterCooldown=nextHunterDelay();}
    }
  }
  if(goatMixer)goatMixer.update(dt);
@@ -805,9 +805,7 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  }
  score+=dt*speed*.65;
  // Difficulty rises in clear 500m stages rather than accelerating constantly.
- const stage=Math.floor(score/1000);
- applyBiome(stage);
- speed=Math.min(32,15+stage*1.15);
+ const biomeStage=Math.floor(score/1000);applyBiome(biomeStage);const speedStage=Math.floor(score/300);speed=Math.min(32,15+speedStage*.35);
  scoreEl.textContent=Math.floor(score);
  goat.position.x=THREE.MathUtils.damp(goat.position.x,[-1.5,0,1.5][lane],16,dt);
  laneLean=THREE.MathUtils.damp(laneLean,0,5.5,dt);
