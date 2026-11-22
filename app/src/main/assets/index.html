@@ -7,7 +7,17 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#8ed8f2;font-family:system-ui,Arial;color:white;touch-action:none}
 #game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
-#hud{display:none;position:fixed;top:env(safe-area-inset-top,10px);left:0;right:0;justify-content:space-between;padding:14px 18px;pointer-events:none;text-shadow:0 2px 5px #000}
+#hud{display:none;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;z-index:24;align-items:center;justify-content:space-between;gap:7px;padding:0 10px;pointer-events:none;text-shadow:0 2px 5px #000}
+#hud .pill{font-size:clamp(11px,3vw,14px);padding:7px 9px;white-space:nowrap}
+#hudPlayer{max-width:36vw;overflow:hidden;text-overflow:ellipsis}
+#pauseGameButton{pointer-events:auto;padding:7px 11px;font-size:14px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:0 3px 0 #10251d}
+#pauseOverlay{display:none;position:fixed;inset:0;z-index:60;background:#06150fc9;align-items:center;justify-content:center;padding:24px;text-align:center}
+#pauseOverlay .pause-card{width:min(90vw,340px);padding:26px 20px;border-radius:22px;background:#183b30;border:2px solid #b7e58a}
+#pauseOverlay button{width:100%;margin-top:12px}
+#storySkip{display:none;margin:20px auto 0;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:0 4px 0 #10251d}
+#title.story-mode .panel>div:first-child,#title.story-mode .menu-actions{display:none}
+#title.story-mode #storySkip{display:block}
+body.playing #paathuIdentity,body.playing #shopOpen,body.playing #settingsOpen{display:none!important}
 .pill{background:#06150fc9;border:1px solid #ffffff35;border-radius:18px;padding:7px 13px;font-weight:800}
 #title{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#172b3a22,#172b3a55);text-align:center;cursor:pointer}
 .panel{width:min(92vw,440px);padding:20px 12px;background:transparent;border:0;box-shadow:none}
@@ -92,7 +102,13 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 </head>
 <body>
 <div id="game"></div>
-<div id="hud"><div class="pill">🐐 PAATHU RUN</div><div class="pill">🪙 <span id="coins">0</span>　🏃 <span id="score">0</span>m</div></div>
+<div id="hud">
+ <div class="pill" id="hudPlayer">🐐 GUEST</div>
+ <div class="pill">🏃 <span id="score">0</span>m</div>
+ <div class="pill">🪙 <span id="coins">0</span></div>
+ <button id="pauseGameButton">Ⅱ</button>
+</div>
+<div id="pauseOverlay"><div class="pause-card"><h2>PAUSED</h2><p>Take a breath, Paathu.</p><button id="resumeGameButton">▶ RESUME</button></div></div>
 <div id="toast">NICE!</div>
 <div id="title"><div class="panel">
   <div style="font-size:clamp(76px,20vw,112px);filter:drop-shadow(0 8px 8px #44205b66)">🐐</div>
@@ -576,19 +592,32 @@ document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('pointerd
 let sx=0,sy=0;renderer.domElement.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
 renderer.domElement.addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<22)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy<0?'jump':'slide')});
 addEventListener('keydown',e=>{if(['ArrowLeft','a','ArrowRight','d','ArrowUp','w',' ','ArrowDown','s'].includes(e.key)){e.preventDefault();move(({ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'jump',w:'jump',' ':'jump',ArrowDown:'slide',s:'slide'})[e.key])}});
-function reset(){for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
+function reset(){document.body.classList.remove('playing');document.getElementById('pauseOverlay').style.display='none';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
  overhead.forEach(item=>{item.group.position.z=item.initialZ;});
- trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
+ trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';coinEl.textContent=coins;refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
 let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0;
+function finishStory(){
+ title.classList.remove('story-mode');
+ title.style.display='none';
+ hunter.visible=false;
+ running=true;
+ document.body.classList.add('playing');
+ hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
+ document.getElementById('hud').style.display='flex';
+ document.getElementById('controls').style.display='flex';
+ last=performance.now();
+}
 function start(){
- reset();running=false;title.querySelector('h1').textContent='A QUIET FOREST...';
+ reset();running=false;document.body.classList.remove('playing');
+ title.classList.add('story-mode');
+ title.querySelector('h1').textContent='A QUIET FOREST...';
  document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
  hunter.visible=false;
  const started=performance.now();last=started;
+ let storyFinished=false;
  function reveal(now){
-   if(title.style.display==='none')return;
+   if(storyFinished || title.style.display==='none')return;
    const elapsed=now-started;
-   // Give each story beat enough time to read before changing the screen.
    if(elapsed<2700){
      title.querySelector('h1').textContent='A QUIET FOREST...';
      document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
@@ -605,23 +634,28 @@ function start(){
      hunter.visible=true;
      hunter.position.set(0,0,6.9);
    }else{
-     hunter.visible=false;
-     title.style.display='none';running=true;
-     hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
-     document.getElementById('hud').style.display='flex';
-     document.getElementById('controls').style.display='flex';
-     last=performance.now();
-     return;
+     storyFinished=true;finishStory();return;
    }
    requestAnimationFrame(reveal);
  }
+ document.getElementById('storySkip').onclick=()=>{if(!storyFinished){storyFinished=true;finishStory();}};
  requestAnimationFrame(reveal);
 }
 document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
 document.getElementById('titleLeaderboardButton').addEventListener('click',()=>document.getElementById('leaderboardOpen').click());
 document.getElementById('titleSettingsButton').addEventListener('click',()=>document.getElementById('settingsOpen').click());
 
-function crash(){running=false;ended=true;document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
+let paused=false;
+document.getElementById('pauseGameButton').addEventListener('click',()=>{
+ if(!running)return;
+ running=false;paused=true;document.getElementById('pauseOverlay').style.display='flex';
+});
+document.getElementById('resumeGameButton').addEventListener('click',()=>{
+ if(!paused)return;
+ paused=false;document.getElementById('pauseOverlay').style.display='none';
+ running=true;last=performance.now();
+});
+function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('pauseOverlay').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
 function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
  if(running){
  // Road markings and scenery stream toward the goat to sell forward motion.
@@ -688,7 +722,7 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  if(coinSpawn<=0){let l=Math.floor(Math.random()*3);for(let i=0;i<5;i++)addCoin(l,-55-i*2.4);coinSpawn=2.1+Math.random()*1.3}
  for(let i=moving.length-1;i>=0;i--){let o=moving[i];o.position.z+=speed*dt;if(o.userData.type==='coin')o.rotation.y+=dt*3;
  if(o.position.z>2.3&&!o.userData.hit){o.userData.hit=true;let same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.65;
- if(o.userData.type==='coin'){if(same&&Math.abs(o.position.z-3)<1.1){coins++;saveProgress();refreshShop();say('+1 🪙')}}else if(o.userData.type!=='water'&&same&&o.position.z>1.5&&o.position.z<4.5){let laneChangeOnly=['giant_boulder','fallen_tree','thorn_wall'].includes(o.userData.type);let safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:jumpY>(o.userData.type==='log'?.8:.75));if(!safe)crash();else say('DODGED!')}}
+ if(o.userData.type==='coin'){if(same&&Math.abs(o.position.z-3)<1.1){coins++;coinEl.textContent=coins;saveProgress();refreshShop();say('+1 🪙')}}else if(o.userData.type!=='water'&&same&&o.position.z>1.5&&o.position.z<4.5){let laneChangeOnly=['giant_boulder','fallen_tree','thorn_wall'].includes(o.userData.type);let safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:jumpY>(o.userData.type==='log'?.8:.75));if(!safe)crash();else say('DODGED!')}}
  if(o.position.z>9){scene.remove(o);moving.splice(i,1)}}
  }
  renderer.render(scene,camera);
@@ -716,6 +750,7 @@ function updateAccount() {
  el('paathuAccountStatus').textContent = currentUser ? 'Logged in as @' + username : 'Playing as guest';
  el('paathuLogout').style.display = currentUser ? 'block' : 'none';
  el('paathuIdentity').textContent = currentUser ? '👤 @' + username : '👤 GUEST MODE';
+ el('hudPlayer').textContent = '🐐 ' + (currentUser ? '@' + username : 'GUEST');
  el('paathuIdentity').style.display = 'block';
 }
 
