@@ -19,7 +19,13 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 #title.story .menu-actions{display:none}#title.story .panel{transform:translateY(-4vh)}#title .menu-actions{display:grid;gap:12px;width:min(82vw,300px);margin:22px auto 0}
 #title .menu-actions button{width:100%;font-size:17px}
 #title .menu-actions .menu-alt{background:#183b30;color:#fff2a1;box-shadow:0 5px 0 #10251d;border:1px solid #b7e58a}
-#paathuIdentity{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:25;display:none;background:#183b30dd;border:1px solid #b7e58a;border-radius:14px;padding:8px 11px;font-size:12px;font-weight:800;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\nbody.playing #paathuIdentity{display:none!important}\n#hud{align-items:center;gap:7px;padding-left:10px;padding-right:10px}\n#hud .pill{font-size:clamp(12px,3.5vw,16px);padding:7px 9px;min-width:0}\n#hudPlayer{flex:0 1 29%;max-width:29%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n#hud .pill:nth-child(2){flex:0 1 auto;white-space:nowrap}\n#pauseGameButton{flex:0 0 42px;padding:5px 8px}
+#paathuIdentity{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:25;display:none;background:#183b30dd;border:1px solid #b7e58a;border-radius:14px;padding:8px 11px;font-size:12px;font-weight:800;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.playing #paathuIdentity{display:none!important}
+#hud{align-items:center;gap:7px;padding-left:10px;padding-right:10px}
+#hud .pill{font-size:clamp(12px,3.5vw,16px);padding:7px 9px;min-width:0}
+#hudPlayer{flex:0 1 29%;max-width:29%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hud .pill:nth-child(2){flex:0 1 auto;white-space:nowrap}
+#pauseGameButton{flex:0 0 42px;padding:5px 8px}
 #controls{display:none;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
 .pad{display:flex;gap:8px;pointer-events:auto}
 .pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
@@ -93,7 +99,7 @@ body.playing #shopOpen,body.playing #settingsOpen,body.playing #accountOpen,body
 }
 .paathu-primary{background:#fff2a1;color:#183b30}
 .paathu-secondary{background:#e7eee2;color:#183b30}
-#paathuMessage{font-size:13px;overflow-wrap:anywhere}
+#paathuMessage{font-size:14px;line-height:1.4;min-height:20px;margin:10px 0;color:#fff2a1;font-weight:700;overflow-wrap:anywhere}
 #paathuLeaderboard{text-align:left}
 .paathu-rank{padding:10px;border-bottom:1px solid #ffffff33}
 </style>
@@ -784,11 +790,21 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
    catch(e){message(e.message);}finally{btn.disabled=false;}
  });
  el('paathuLogin').addEventListener('click',async()=>{
-   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
-   if(!email||!password){message('Enter your email and password.');return;}
-   const btn=el('paathuLogin');btn.disabled=true;message('Logging in...');
-   try{const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});saveSession(data);localStorage.setItem('paathuRunMode','account');message('Welcome back!');}
-   catch(e){message(e.message);}finally{btn.disabled=false;}
+   const email=el('paathuEmail').value.trim().toLowerCase(),password=el('paathuPassword').value;
+   if(!email||!password){message('Enter your email address and password.');return;}
+   const btn=el('paathuLogin');btn.disabled=true;message('Connecting securely to your account...');
+   try{
+     const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+     if(!data||!data.access_token||!data.refresh_token)throw new Error('Login response was incomplete. Please try again.');
+     saveSession(data);localStorage.setItem('paathuRunMode','account');
+     message('Login successful. Welcome back!');
+   }catch(e){
+     const raw=String(e.message||e);
+     if(/invalid login credentials/i.test(raw))message('Email or password is incorrect. Your account has not been deleted.');
+     else if(/email not confirmed/i.test(raw))message('Please confirm your email using the link sent by Supabase, then log in again.');
+     else if(/failed to fetch|network|load failed/i.test(raw))message('Could not reach the login server. Check your internet connection and try again.');
+     else message('Login failed: '+raw);
+   }finally{btn.disabled=false;}
  });
  el('paathuLogout').addEventListener('click',async()=>{try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST',token:session.access_token});}catch(e){message(e.message);return;}saveSession(null);message('Logged out. Your local game progress remains on this device.');});
  async function loadLeaderboard(){
@@ -806,7 +822,7 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
    if(!currentUser||!session?.access_token||!Number.isFinite(distance)||distance<0)return;
    try{const prior=await api('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1',{token:session.access_token});const best=Math.max(Math.floor(distance),Number(prior[0]?.best_distance)||0);if(best<=(Number(prior[0]?.best_distance)||0))return;await api('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',token:session.access_token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});}catch(e){console.warn('Best run upload failed',e);}
  }};
- refreshAccount();
+ refreshAccount().catch(e=>{console.warn('Initial account check failed',e);message('Account check failed. You can still choose guest mode or retry login.');});
 })();
 </script>
 </body>

@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PAATHU RUN</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#8ed8f2;font-family:system-ui,Arial;color:white;touch-action:none}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{display:none;position:fixed;top:env(safe-area-inset-top,10px);left:0;right:0;justify-content:space-between;padding:14px 18px;pointer-events:none;text-shadow:0 2px 5px #000}
+.pill{background:#06150fc9;border:1px solid #ffffff35;border-radius:18px;padding:7px 13px;font-weight:800}
+#title{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#172b3a22,#172b3a55);text-align:center;cursor:pointer}
+.panel{width:min(92vw,440px);padding:20px 12px;background:transparent;border:0;box-shadow:none}
+h1{font-size:clamp(46px,13vw,76px);line-height:1;margin:0;color:#fff36b;letter-spacing:1px;-webkit-text-stroke:2px #7138a0;text-shadow:0 5px 0 #7138a0,0 9px 18px #182b4c99}
+.sub{color:#fff;margin:20px 0 0;font-size:19px;font-weight:900;letter-spacing:3px;text-shadow:0 3px 8px #32204f}
+button{border:0;border-radius:16px;background:#a9e85e;color:#14200d;font-weight:900;font-size:18px;padding:14px 24px;box-shadow:0 5px 0 #5d9632}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
+#help{display:none}
+#title.story .menu-actions{display:none}#title.story .panel{transform:translateY(-4vh)}#title .menu-actions{display:grid;gap:12px;width:min(82vw,300px);margin:22px auto 0}
+#title .menu-actions button{width:100%;font-size:17px}
+#title .menu-actions .menu-alt{background:#183b30;color:#fff2a1;box-shadow:0 5px 0 #10251d;border:1px solid #b7e58a}
+#paathuIdentity{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:25;display:none;background:#183b30dd;border:1px solid #b7e58a;border-radius:14px;padding:8px 11px;font-size:12px;font-weight:800;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\nbody.playing #paathuIdentity{display:none!important}\n#hud{align-items:center;gap:7px;padding-left:10px;padding-right:10px}\n#hud .pill{font-size:clamp(12px,3.5vw,16px);padding:7px 9px;min-width:0}\n#hudPlayer{flex:0 1 29%;max-width:29%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n#hud .pill:nth-child(2){flex:0 1 auto;white-space:nowrap}\n#pauseGameButton{flex:0 0 42px;padding:5px 8px}
+#controls{display:none;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
+.pad{display:flex;gap:8px;pointer-events:auto}
+.pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
+#pauseGameButton{pointer-events:auto;padding:5px 14px;font-size:20px;border-radius:12px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:none}
+#storySkip{display:none;position:fixed;z-index:40;right:18px;bottom:calc(28px + env(safe-area-inset-bottom,0px));font-size:15px;padding:12px 18px}
+#hunterWarning{display:none;position:fixed;top:18%;left:0;right:0;text-align:center;color:#fff;background:#a51f1fcc;font-weight:1000;font-size:clamp(18px,5vw,26px);padding:12px;text-shadow:0 2px 5px #000;z-index:45;animation:warningBlink .35s infinite alternate;pointer-events:none}
+@keyframes warningBlink{from{opacity:.45;transform:scale(.98)}to{opacity:1;transform:scale(1.02)}}
+#pauseOverlay{display:none;position:fixed;inset:0;z-index:80;background:#0009;align-items:center;justify-content:center;padding:20px}
+body.playing #shopOpen,body.playing #settingsOpen,body.playing #accountOpen,body.playing #leaderboardOpen{display:none!important}
+#accountOpen,#leaderboardOpen{display:none!important}
+#settingsOpen{display:none!important}
+#toast{position:fixed;top:22%;left:0;right:0;text-align:center;font-weight:900;font-size:22px;text-shadow:0 3px 8px #000;pointer-events:none;opacity:0}
+#shopOpen{position:fixed;right:14px;top:calc(72px + env(safe-area-inset-top,0px));z-index:20;padding:9px 13px;font-size:14px;border-radius:14px;box-shadow:0 3px 0 #5d9632}
+#shopModal{display:none;position:fixed;inset:0;z-index:30;align-items:center;justify-content:center;background:#06150fc9;padding:20px}
+.shopCard{width:min(92vw,360px);padding:24px 20px;border-radius:24px;background:linear-gradient(160deg,#315f3c,#183b30);border:2px solid #b7e58a;text-align:center;box-shadow:0 15px 50px #0008}
+.shopCard h2{margin:0 0 8px;color:#fff2a1;font-size:25px}
+.shopBalance{font-weight:900;font-size:18px;margin:10px 0 20px}
+.shopItem{display:flex;align-items:center;justify-content:center;gap:18px;padding:16px;margin-bottom:16px;border-radius:16px;background:#ffffff18;text-align:left}
+.hatPreview{font-size:48px;line-height:1}
+.shopItem strong,.shopItem small{display:block}.shopItem small{opacity:.85;margin-top:4px}
+.shopCard button{width:100%;margin:5px 0}
+.shopCard .shopClose{background:#e7eee2;box-shadow:0 4px 0 #9aa99a}
+.shopNote{display:block;opacity:.8;margin-top:10px}
+
+/* Settings and expanded shop */
+#settingsOpen{position:fixed;left:14px;top:calc(72px + env(safe-area-inset-top,0px));z-index:20;padding:9px 13px;font-size:14px;border-radius:14px;box-shadow:0 3px 0 #5d9632}
+#shopModal,#settingsModal{overflow-y:auto;overscroll-behavior:contain}
+.shopCard{max-height:88vh;overflow-y:auto}
+.shopItem{justify-content:space-between;gap:10px;margin-bottom:10px;padding:12px}
+.shopItemInfo{display:flex;align-items:center;gap:13px;min-width:0}
+.shopItem .hatPreview{width:52px;text-align:center;flex:none}
+.shopItem button{width:auto;min-width:112px;margin:0;padding:10px 12px;font-size:13px;white-space:nowrap}
+.shopItem button:disabled{opacity:.55}
+#settingsModal{display:none;position:fixed;inset:0;z-index:31;align-items:center;justify-content:center;background:#06150fc9;padding:20px}
+.settingsCard{width:min(92vw,380px);max-height:88vh;overflow-y:auto;padding:23px 20px;border-radius:24px;background:linear-gradient(160deg,#315f3c,#183b30);border:2px solid #b7e58a;text-align:center;box-shadow:0 15px 50px #0008}
+.settingsCard h2{margin:0 0 8px;color:#fff2a1;font-size:25px}
+.colourGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.colourChoice{padding:10px 5px;border:2px solid #ffffff55;border-radius:14px;background:#ffffff18;color:white;box-shadow:none;font-size:12px}
+.colourChoice.selected{border-color:#fff36b;background:#ffffff35;box-shadow:0 0 0 2px #fff36b55}
+.colourDot{display:block;width:34px;height:34px;margin:0 auto 6px;border-radius:50%;border:2px solid #ffffffaa}
+.settingsCard button{width:100%;margin:5px 0}
+.settingsCard .shopClose{background:#e7eee2;box-shadow:0 4px 0 #9aa99a}
+
+#accountOpen,#leaderboardOpen{
+ position:fixed;right:14px;z-index:20;padding:10px 13px;
+ border:2px solid #b7e58a;border-radius:14px;
+ background:#183b30;color:#fff2a1;font-weight:bold;
+ box-shadow:0 3px 0 #5d9632
+}
+#accountOpen{top:calc(72px + env(safe-area-inset-top,0px))}
+#leaderboardOpen{top:calc(126px + env(safe-area-inset-top,0px))}
+.paathu-overlay{
+ display:none;position:fixed;inset:0;z-index:60;
+ background:#06150fdd;align-items:center;justify-content:center;padding:16px
+}
+.paathu-card{
+ width:min(92vw,390px);max-height:86vh;overflow:auto;
+ background:linear-gradient(160deg,#315f3c,#183b30);
+ border:2px solid #b7e58a;border-radius:22px;
+ padding:22px;color:white;text-align:center
+}
+.paathu-card h2{color:#fff2a1;margin-top:0}
+.paathu-card input{
+ display:block;width:100%;box-sizing:border-box;margin:10px 0;
+ padding:13px;border-radius:10px;border:1px solid #b7e58a;
+ background:#fff;color:#18251c;font-size:16px
+}
+.paathu-card button{
+ width:100%;padding:12px;margin:5px 0;border:0;
+ border-radius:12px;font-weight:bold;font-size:15px
+}
+.paathu-primary{background:#fff2a1;color:#183b30}
+.paathu-secondary{background:#e7eee2;color:#183b30}
+#paathuMessage{font-size:13px;overflow-wrap:anywhere}
+#paathuLeaderboard{text-align:left}
+.paathu-rank{padding:10px;border-bottom:1px solid #ffffff33}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud"><div class="pill" id="hudPlayer">🐐 GUEST</div><div class="pill">🪙 <span id="coins">0</span>　🏃 <span id="score">0</span>m</div><button id="pauseGameButton" aria-label="Pause">Ⅱ</button></div>
+<div id="toast">NICE!</div><div id="hunterWarning">▲ HUNTER AIMING — SWITCH LANE!</div><button id="storySkip">SKIP STORY »</button><div id="pauseOverlay"><div class="paathu-card"><h2>PAUSED</h2><button id="resumeGame">RESUME</button><button id="quitGame">QUIT RUN</button></div></div>
+<div id="title"><div class="panel">
+  <div style="font-size:clamp(76px,20vw,112px);filter:drop-shadow(0 8px 8px #44205b66)">🐐</div>
+  <h1>PAATHU RUN</h1>
+  <div class="sub" id="titleSub">ENDLESS FOREST RUN</div>
+  <div class="menu-actions">
+   <button id="startGameButton">▶ PRESS START</button>
+   <button id="titleLeaderboardButton" class="menu-alt">🏆 GLOBAL LEADERBOARD</button>
+   <button id="titleSettingsButton" class="menu-alt">⚙️ SETTINGS</button>
+  </div>
+</div></div>
+<div id="paathuIdentity">GUEST MODE</div>
+<button id="shopOpen" aria-label="Open shop">🎅 SHOP</button>
+<button id="settingsOpen" aria-label="Open settings">⚙️ SETTINGS</button>
+<div id="shopModal">
+ <div class="shopCard">
+  <h2>🎄 FOREST SHOP</h2>
+  <div class="shopBalance">🪙 <span id="shopCoins">0</span> coins</div>
+  <div id="shopItems"></div>
+  <button id="shopClose" class="shopClose">CLOSE</button>
+  <small class="shopNote">Your coins and purchases are saved on this device.</small>
+ </div>
+</div>
+<div id="settingsModal">
+ <div class="settingsCard">
+  <h2>⚙️ PAATHU SETTINGS</h2>
+  <div class="shopBalance">Choose Paathu's colour</div>
+  <div id="colourGrid" class="colourGrid"></div><div class="shopBalance">Choose your profile goat</div><div id="profileLogoGrid" class="colourGrid"></div>
+  <div id="goldColourAction"></div>
+  <button id="settingsAccountButton" class="shopClose">👤 ACCOUNT / LOGIN</button>
+  <button id="settingsClose" class="shopClose">CLOSE</button>
+ </div>
+</div>
+
+
+<div id="accountModal" class="paathu-overlay">
+ <div class="paathu-card">
+  <h2>PAATHU ACCOUNT</h2>
+  <p id="paathuAccountStatus">Playing as guest</p>
+  <input id="paathuUsername" placeholder="Username (registration)" maxlength="20">
+  <input id="paathuEmail" type="email" placeholder="Email address">
+  <input id="paathuPassword" type="password" placeholder="Password (8+ characters)">
+  <button id="paathuRegister" class="paathu-primary">CREATE ACCOUNT</button>
+  <button id="paathuLogin" class="paathu-primary">LOG IN</button>
+  <button id="paathuGuest" class="paathu-secondary">CONTINUE AS GUEST</button>
+  <button id="paathuLogout" class="paathu-secondary" style="display:none">LOG OUT</button>
+  <p id="paathuMessage"></p>
+  <button id="paathuAccountClose" class="paathu-secondary">CLOSE</button>
+ </div>
+</div>
+
+<div id="leaderboardModal" class="paathu-overlay">
+ <div class="paathu-card">
+  <h2>🏆 GLOBAL LEADERBOARD</h2>
+  <div id="paathuLeaderboard">Loading rankings...</div>
+  <button id="paathuLeaderboardClose" class="paathu-secondary">CLOSE</button>
+ </div>
+</div>
+<div id="controls">
+ <div class="pad"><button data-move="left">◀</button><button data-move="right">▶</button></div>
+ <div class="pad"><button data-move="jump">⬆</button><button data-move="slide">⬇</button></div>
+</div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const mount=document.getElementById('game');
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x83d7f4); scene.fog=new THREE.Fog(0x83d7f4,48,145);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,150); camera.position.set(0,5.0,11.5); camera.lookAt(0,1.15,-6);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,1.35)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.12; mount.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe5ffff,0x34402b,2.0));
+const sun=new THREE.DirectionalLight(0xfff1d0,2.8); sun.position.set(-5,12,7); sun.castShadow=true; sun.shadow.mapSize.set(1536,1536); scene.add(sun);
+const mat=(color,roughness=.85)=>new THREE.MeshStandardMaterial({color,roughness});
+const green=mat(0x54a94c), darkGreen=mat(0x287344), stone=mat(0xa99b82), paleStone=mat(0xd4c6a5), gold=mat(0xffcf42,.38), purple=mat(0xa94be8), lightPurple=mat(0xd58aff), pink=mat(0xffa9ce), white=mat(0xfff8fb), black=mat(0x24152e), hoof=mat(0x49334b), horn=mat(0xc58a4c), mouth=mat(0x7b3650);
+const box=(w,h,d,m,x,y,z)=>{let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o};
+const sphere=(r,m,x,y,z,sx=1,sy=1,sz=1)=>{let o=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=true;scene.add(o);return o};
+const cyl=(rt,rb,h,m,x,y,z,seg=10)=>{let o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);o.position.set(x,y,z);o.castShadow=true;scene.add(o);return o};
+
+// PAATHU FOREST: a winding-looking woodland trail with distant mountain ranges.
+scene.background=new THREE.Color(0x9bdcf4);
+scene.fog=new THREE.Fog(0x9bdcf4,58,165);
+const ground=box(180,.7,145,mat(0x4b914b),0,-.55,-48);
+const forestFloor=box(34,.12,145,mat(0x5eaa55),0,-.13,-48);
+// Soft dirt running path, with grassy shoulders.
+const path=box(7.5,.16,145,mat(0xb58b59),0,-.02,-48);
+const pathEdgeMat=mat(0x80613f);
+box(.16,.08,145,pathEdgeMat,-3.82,.055,-48);
+box(.16,.08,145,pathEdgeMat,3.82,.055,-48);
+// Distant mountain layers: broad overlapping peaks create a scenic horizon.
+const mountainMats=[mat(0x789b9c),mat(0x668b83),mat(0x557b70),mat(0x8ca9a4)];
+for(let i=0;i<13;i++){
+ const x=-65+i*10.8, h=17+(i%4)*5, r=13+(i%3)*3;
+ const peak=new THREE.Mesh(new THREE.ConeGeometry(r,h,5),mountainMats[i%mountainMats.length]);
+ peak.position.set(x,h*.42,-91-(i%3)*8);peak.rotation.y=(i%2)*.4;scene.add(peak);
+ // Pale rocky cap on taller distant peaks.
+ if(h>27){const cap=new THREE.Mesh(new THREE.ConeGeometry(r*.32,h*.25,5),mat(0xe2eee8));cap.position.set(x,h*.82,-91-(i%3)*8);scene.add(cap);}
+}
+// Forested foothills in front of the mountains.
+for(let i=0;i<17;i++){
+ const hill=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat(i%2?0x4b8757:0x60935b));
+ hill.scale.set(9+(i%3)*3,5+(i%4),5);hill.position.set(-72+i*9,1.2,-62-(i%3)*5);scene.add(hill);
+}
+// Pine tree builder; each tree is a grouped trunk and layered green canopy.
+const roadsideProps=[];
+const pineMats=[mat(0x174f35),mat(0x206b3d),mat(0x2c8248),mat(0x3a9250)];
+const trunkMat=mat(0x765039), rockMats=[mat(0x777d70),mat(0x929487),mat(0x665f54)];
+function makePine(group,height,variant=0){
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.13,.22,height*.48,7),trunkMat);
+ trunk.position.y=height*.24;group.add(trunk);
+ for(let k=0;k<3;k++){
+   const radius=height*(.31-k*.055), tierH=height*.48;
+   const crown=new THREE.Mesh(new THREE.ConeGeometry(radius,tierH,7),pineMats[(variant+k)%pineMats.length]);
+   crown.position.y=height*.38+k*height*.22;group.add(crown);
+ }
+}
+for(let side of [-1,1]){
+ for(let i=0;i<13;i++){
+   const group=new THREE.Group(),z=-i*10-8;
+   const x=side*(7.2+(i%3)*2.0);
+   group.position.set(x,0,z);
+   const h=5.5+(i%4)*1.35;makePine(group,h,i);
+   // A smaller companion pine makes the forest feel dense, not like a row of props.
+   const small=new THREE.Group();small.position.set(side*-2.0,0,1.8);makePine(small,h*.62,i+1);group.add(small);
+   const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.7+(i%3)*.18,0),rockMats[i%rockMats.length]);
+   rock.position.set(side*1.4,.35,-1.1);rock.scale.set(1.3,.7,1);group.add(rock);
+   scene.add(group);roadsideProps.push({group,initialZ:z,phase:i*.5+side});
+ }
+}
+// Small trail stones and tufts scroll toward the runner.
+const trackScroll=[];
+for(let z=5;z>-122;z-=4.5){
+ const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.11,0),mat(0x8c765a));
+ stone.position.set((Math.random()-.5)*5.8,.09,z);stone.scale.set(1.5,.45,.8);scene.add(stone);trackScroll.push(stone);
+}
+const laneDashes=[];
+for(let z=4;z>-112;z-=7){
+ const dash=new THREE.Group();dash.position.z=z;
+ for(let x of [-1.55,1.55]){
+   const tuft=new THREE.Mesh(new THREE.ConeGeometry(.12,.34,5),pineMats[2]);
+   tuft.position.set(x,.18,0);dash.add(tuft);
+ }
+ scene.add(dash);laneDashes.push(dash);
+}
+// Open sky and soft clouds above the mountain ridge.
+const overhead=[];
+const clouds=[];
+for(let i=0;i<5;i++){
+ const cloud=new THREE.Group();cloud.position.set((i%2?1:-1)*(13+(i%3)*7),13+(i%2)*2,-38-i*19);
+ for(let j=0;j<5;j++){
+   const puff=new THREE.Mesh(new THREE.SphereGeometry(1.15,12,10),new THREE.MeshBasicMaterial({color:0xffffff}));
+   puff.position.set((j-2)*.85,(j%2)*.28,0);puff.scale.set(1.25,.72,.9);cloud.add(puff);
+ }
+ scene.add(cloud);clouds.push(cloud);
+}
+// Paathu: use a real, lightweight rigged goat model instead of the old pile of spheres.
+const goat=new THREE.Group(); scene.add(goat); goat.position.set(0,0,3);
+const goatModelRoot=new THREE.Group();goat.add(goatModelRoot);
+function makeHatGroup(){const g=new THREE.Group();g.position.set(0,-.30,-.55);g.visible=false;goatModelRoot.add(g);return g;}
+const christmasHat=makeHatGroup();
+const hatBrim=new THREE.Mesh(new THREE.CylinderGeometry(.43,.43,.12,20),mat(0xf6f2e8));
+hatBrim.position.y=2.43;christmasHat.add(hatBrim);
+const hatCone=new THREE.Mesh(new THREE.ConeGeometry(.34,.78,16),mat(0xc92f3b));
+hatCone.position.set(0,2.84,-.04);hatCone.rotation.z=-.12;christmasHat.add(hatCone);
+const hatPom=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),mat(0xffffff));
+hatPom.position.set(-.06,3.24,-.04);christmasHat.add(hatPom);
+// British gentleman bowler hat.
+const gentlemanHat=makeHatGroup();
+const gentlemanBrim=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.10,24),mat(0x17191c));
+gentlemanBrim.position.y=2.48;gentlemanHat.add(gentlemanBrim);
+const gentlemanCrown=new THREE.Mesh(new THREE.CylinderGeometry(.34,.39,.55,24),mat(0x202328));
+gentlemanCrown.position.y=2.78;gentlemanHat.add(gentlemanCrown);
+const gentlemanBand=new THREE.Mesh(new THREE.CylinderGeometry(.395,.395,.09,24),mat(0x9b2430));
+gentlemanBand.position.y=2.57;gentlemanHat.add(gentlemanBand);
+// NYPD-style navy police cap with a gold badge.
+const policeHat=makeHatGroup();
+const policeBrim=new THREE.Mesh(new THREE.BoxGeometry(.88,.09,.57),mat(0x111e3b));
+policeBrim.position.set(0,2.48,-.08);policeHat.add(policeBrim);
+const policeCrown=new THREE.Mesh(new THREE.SphereGeometry(.39,20,12),mat(0x17294d));
+policeCrown.scale.set(1,.65,.88);policeCrown.position.set(0,2.70,-.02);policeHat.add(policeCrown);
+const policeBadge=new THREE.Mesh(new THREE.CircleGeometry(.105,6),mat(0xf2c54b));
+policeBadge.position.set(0,2.72,.335);policeBadge.rotation.y=0;policeHat.add(policeBadge);
+let goatMixer=null, goatModel=null, goatLegNodes=[], goatPartsByName={}, goatCoatMaterials=[];
+const head=new THREE.Group(), tail=new THREE.Group(), legs=[];
+const goatLoader=new GLTFLoader();
+goatLoader.load(
+ 'https://polyfork.dev/cdn/goat-base.glb',
+ (gltf)=>{
+   goatModel=gltf.scene;
+   // The asset is authored in metres; size it to match the runner's lane scale.
+   goatModel.scale.setScalar(1.42);
+   goatModel.rotation.y=Math.PI;
+   goatModel.position.set(0,0,0);
+   goatModel.traverse((node)=>{
+     if(!node.isMesh)return;
+     node.castShadow=true;node.receiveShadow=true;
+     const mats=Array.isArray(node.material)?node.material:[node.material];
+     for(const material of mats){
+       if(!material)continue;
+       if(material.color){
+         // The supplied goat asset uses a shared coat palette. Keep a handle so
+         // the settings menu can recolour it without reloading the model.
+         if(!goatCoatMaterials.includes(material))goatCoatMaterials.push(material);
+       }
+     }
+     if(/FrontUpLeg|FrontLeg|HindUpLeg|HindLeg/.test(node.name||''))goatLegNodes.push(node);
+     if(node.name)goatPartsByName[node.name]=node;
+   });
+   goatModelRoot.add(goatModel);
+   applyGoatColour();
+   if(gltf.animations && gltf.animations.length){
+     goatMixer=new THREE.AnimationMixer(goatModel);
+     gltf.animations.forEach(clip=>goatMixer.clipAction(clip).play());
+   }
+ },
+ undefined,
+ (error)=>{
+   console.warn('Paathu goat model could not load; using simple fallback.',error);
+   const fallbackBody=new THREE.Mesh(new THREE.SphereGeometry(.72,24,18),purple);
+   fallbackBody.position.set(0,1.05,0);fallbackBody.scale.set(1,.9,1.25);fallbackBody.castShadow=true;goatModelRoot.add(fallbackBody);
+   const fallbackHead=new THREE.Mesh(new THREE.SphereGeometry(.53,24,18),lightPurple);
+   fallbackHead.position.set(0,2,-.62);fallbackHead.castShadow=true;goatModelRoot.add(fallbackHead);
+   for(const x of [-.25,.25]){
+     const eye=new THREE.Mesh(new THREE.SphereGeometry(.12,16,12),white);eye.position.set(x,2.08,-1.08);goatModelRoot.add(eye);
+     const pupil=new THREE.Mesh(new THREE.SphereGeometry(.06,12,10),black);pupil.position.set(x,2.08,-1.14);goatModelRoot.add(pupil);
+     const ear=new THREE.Mesh(new THREE.SphereGeometry(.2,14,10),pink);ear.position.set(x*2,2,-.55);ear.scale.set(1.5,.45,.55);goatModelRoot.add(ear);
+     const horn=new THREE.Mesh(new THREE.ConeGeometry(.12,.55,12),mat(0xc58a4c));horn.position.set(x*.9,2.65,-.48);horn.rotation.z=x<0?.25:-.25;goatModelRoot.add(horn);
+   }
+ }
+);
+// The forest hunter: a stylised, non-graphic pursuer who appears in the opening.
+const hunter=new THREE.Group();hunter.position.set(0,0,7.1);hunter.scale.setScalar(.92);scene.add(hunter);
+const hunterCloth=mat(0x554335),hunterDark=mat(0x292d2c),hunterSkin=mat(0xc58e68),hunterLeather=mat(0x805a35);
+const hBody=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.95,5,9),hunterCloth);hBody.position.y=1.12;hunter.add(hBody);
+const hHead=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12),hunterSkin);hHead.position.set(0,2.02,0);hunter.add(hHead);
+const hood=new THREE.Mesh(new THREE.SphereGeometry(.4,14,12),hunterDark);hood.scale.set(1.08,1.05,.95);hood.position.set(0,2.15,-.08);hunter.add(hood);
+const faceCover=new THREE.Mesh(new THREE.BoxGeometry(.42,.19,.08),hunterLeather);faceCover.position.set(0,1.94,.3);hunter.add(faceCover);
+for(let x of [-.17,.17]){
+ const eye=new THREE.Mesh(new THREE.SphereGeometry(.045,8,8),mat(0xffd47a));eye.position.set(x,2.05,.34);hunter.add(eye);
+ const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.62,4,7),hunterDark);leg.position.set(x, .38,0);hunter.add(leg);
+ const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.55,4,7),hunterCloth);arm.position.set(x*2,1.25,.04);arm.rotation.z=x<0?-.25:.25;hunter.add(arm);
+}
+const pack=new THREE.Mesh(new THREE.BoxGeometry(.55,.68,.28),hunterLeather);pack.position.set(0,1.25,-.34);hunter.add(pack);
+// Clearly readable hunting rifle held across the front of the pursuer.
+const rifle=new THREE.Group();rifle.position.set(.34,1.38,.42);rifle.rotation.z=-.10;hunter.add(rifle);
+const gunStock=new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.48),hunterLeather);gunStock.position.z=-.28;rifle.add(gunStock);
+const gunBody=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.62),hunterDark);rifle.add(gunBody);
+const gunBarrel=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.9,10),hunterDark);gunBarrel.rotation.x=Math.PI/2;gunBarrel.position.z=.68;rifle.add(gunBarrel);
+const gunSight=new THREE.Mesh(new THREE.BoxGeometry(.08,.09,.16),mat(0x111111));gunSight.position.set(0,.12,.2);rifle.add(gunSight);
+const muzzleFlash=new THREE.Mesh(new THREE.ConeGeometry(.17,.42,8),mat(0xffc13b));muzzleFlash.rotation.x=-Math.PI/2;muzzleFlash.position.z=1.18;muzzleFlash.visible=false;rifle.add(muzzleFlash);
+hunter.visible=false;
+// track decoration pool
+let moving=[];
+function addObstacle(lane,z,type){
+ let g=new THREE.Group();g.position.set([-1.5,0,1.5][lane],0,z);scene.add(g);g.userData={type,lane,hit:false};
+ if(type==='rock'){
+   let o=new THREE.Mesh(new THREE.DodecahedronGeometry(.48,1),stone);o.position.y=.48;o.scale.set(1,.9,.75);o.castShadow=true;g.add(o);
+ }
+ if(type==='log'){
+   let o=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,1.18,12),mat(0x80502d));o.rotation.z=Math.PI/2;o.position.y=.7;o.castShadow=true;g.add(o);
+   for(let x of [-.38,.38]){let ring=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.08,12),mat(0xc99b62));ring.rotation.z=Math.PI/2;ring.position.set(x,.7,0);g.add(ring)}
+ }
+ if(type==='crate'){
+   const wood=mat(0xb8793d), trim=mat(0xf0c16a);
+   let c=new THREE.Mesh(new THREE.BoxGeometry(1.05,1.05,.9),wood);c.position.y=.55;c.castShadow=true;g.add(c);
+   for(let y of [.18,.9]){let plank=new THREE.Mesh(new THREE.BoxGeometry(1.09,.12,.94),trim);plank.position.y=y;g.add(plank)}
+   let slash=new THREE.Mesh(new THREE.BoxGeometry(1.12,.12,.98),trim);slash.position.y=.55;slash.rotation.z=.72;g.add(slash);
+ }
+ if(type==='puddle'){
+   let p=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.035,24),mat(0x55cbe8,.25));p.position.y=.025;p.scale.z=1.2;g.add(p);
+   let glint=new THREE.Mesh(new THREE.SphereGeometry(.12,12,8),mat(0xd9fbff,.2));glint.scale.set(1,.12,.55);glint.position.set(-.2,.06,.05);g.add(glint);
+   // Splash droplets make the hazard easy to spot.
+   for(let x of [-.38,.34]){let d=new THREE.Mesh(new THREE.SphereGeometry(.09,10,8),mat(0x9cecff));d.position.set(x,.14,0);g.add(d)}
+ }
+ if(type==='branch'){
+   const bark=mat(0x754629),leaf=mat(0x4a9c45);
+   let b=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,2.25,10),bark);b.rotation.z=Math.PI/2;b.position.y=1.75;b.castShadow=true;g.add(b);
+   for(let x of [-.62,0,.62]){let tuft=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),leaf);tuft.position.set(x,1.88,0);tuft.scale.set(1,.75,1);g.add(tuft)}
+ }
+ if(type==='stump'){
+   let st=new THREE.Mesh(new THREE.CylinderGeometry(.42,.5,.85,12),mat(0x88552f));st.position.y=.42;st.castShadow=true;g.add(st);
+   let top=new THREE.Mesh(new THREE.CylinderGeometry(.43,.43,.08,12),mat(0xd2a36b));top.position.y=.86;g.add(top);
+ }
+ if(type==='fallen_branch'){
+   const bark=mat(0x79502f),leaf=mat(0x3e9148);
+   const log=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,1.22,10),bark);log.rotation.z=Math.PI/2;log.position.y=.28;g.add(log);
+   for(let x of [-.35,.05,.38]){const twig=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,.8,7),bark);twig.position.set(x,.55,0);twig.rotation.z=x*.8;g.add(twig)}
+ }
+ if(type==='mushrooms'){
+   for(let x of [-.42,0,.42]){
+     const stem=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.28,8),mat(0xf1e8d2));stem.position.set(x,.14,0);g.add(stem);
+     const cap=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),mat(x===0?0xe64d48:0xe8a84c));cap.scale.y=.55;cap.position.set(x,.31,0);g.add(cap);
+   }
+ }
+ if(type==='boulder'){
+   const b=new THREE.Mesh(new THREE.DodecahedronGeometry(.9,1),mat(0x777d78));b.position.y=.82;b.scale.set(1.1,1,.85);g.add(b);
+ }
+ if(type==='roots'){
+   for(let x of [-.65,-.2,.25,.65]){
+     const root=new THREE.Mesh(new THREE.CylinderGeometry(.13,.2,1.15,7),mat(0x78502e));root.rotation.z=Math.PI/2+(Math.random()-.5)*.4;root.position.set(x,.28,0);g.add(root);
+   }
+ }
+ if(type==='water'){
+   // Decorative, safe shallow stream crossing: it never triggers a collision.
+   const water=new THREE.Mesh(new THREE.CircleGeometry(1.18,28),new THREE.MeshStandardMaterial({color:0x58c9e8,roughness:.2,metalness:.08,transparent:true,opacity:.82}));
+   water.rotation.x=-Math.PI/2;water.scale.set(1.3,.7,1);water.position.y=.055;g.add(water);
+   for(let i=0;i<3;i++){
+     const ripple=new THREE.Mesh(new THREE.TorusGeometry(.35+i*.2,.018,6,24),new THREE.MeshBasicMaterial({color:0xd8fbff,transparent:true,opacity:.7}));
+     ripple.rotation.x=-Math.PI/2;ripple.position.y=.075+i*.002;g.add(ripple);
+   }
+ }
+ if(type==='giant_boulder'){
+   const rockMat=mat(0x777e79),highlight=mat(0xa4aaa0);
+   const b=new THREE.Mesh(new THREE.DodecahedronGeometry(.62,1),rockMat);
+   b.position.y=.62;b.scale.set(1.0,1.0,.9);b.castShadow=true;g.add(b);
+   const chip=new THREE.Mesh(new THREE.DodecahedronGeometry(.32,0),highlight);
+   chip.position.set(-.28,1.05,.18);chip.scale.set(1,.65,.7);g.add(chip);
+ }
+ if(type==='fallen_tree'){
+   const bark=mat(0x684126),cut=mat(0xd1a06a),leaves=mat(0x2e7e43);
+   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.36,.42,1.25,12),bark);
+   trunk.rotation.z=Math.PI/2;trunk.position.y=.42;trunk.castShadow=true;g.add(trunk);
+   for(let x of [-.55,.55]){
+     const end=new THREE.Mesh(new THREE.CylinderGeometry(.37,.37,.09,12),cut);
+     end.rotation.z=Math.PI/2;end.position.set(x,.42,0);g.add(end);
+   }
+   for(let x of [-.42,-.12,.22,.42]){
+     const branch=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.25,8),bark);
+     branch.position.set(x,.82,0);branch.rotation.z=(x%2?-.65:.65);g.add(branch);
+     const crown=new THREE.Mesh(new THREE.SphereGeometry(.25,10,9),leaves);
+     crown.position.set(x,1.12,0);crown.scale.set(1.25,.8,1);g.add(crown);
+   }
+ }
+ if(type==='thorn_wall'){
+   const bushMats=[mat(0x246b38),mat(0x388b45),mat(0x4d9c4d)];
+   for(let i=0;i<7;i++){
+     const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(.25+(i%3)*.035,1),bushMats[i%3]);
+     bush.position.set(-.48+i*.24,.48+(i%2)*.12,0);bush.scale.set(1,1.05,.9);g.add(bush);
+   }
+   const thorn=mat(0xd8d0a2);
+   for(let i=0;i<6;i++){
+     const spike=new THREE.Mesh(new THREE.ConeGeometry(.09,.42,5),thorn);
+     spike.position.set(-.48+(i%3)*.48,.72+Math.floor(i/3)*.18,.12);spike.rotation.z=(i%2?-.5:.5);g.add(spike);
+   }
+ }
+ if(type==='train'){
+   const body=new THREE.Mesh(new THREE.BoxGeometry(1.45,2.7,2.5),mat(0x168eaa));
+   body.position.set(0,1.35,0);body.castShadow=true;g.add(body);
+   const windshield=new THREE.Mesh(new THREE.BoxGeometry(1.12,.72,.06),mat(0x9de7f3,.25));
+   windshield.position.set(0,2.02,1.27);g.add(windshield);
+   const stripe=new THREE.Mesh(new THREE.BoxGeometry(1.48,.22,2.52),mat(0xf3a34b));
+   stripe.position.y=1.05;g.add(stripe);
+   for(let x of [-.48,.48]){
+     const lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,12,10),new THREE.MeshBasicMaterial({color:0xfff4bf}));
+     lamp.position.set(x,.55,1.29);g.add(lamp);
+   }
+ }
+ g.scale.setScalar(1.12);moving.push(g);return g;
+}
+function addCoin(lane,z){let g=new THREE.Group();g.position.set([-1.5,0,1.5][lane],1.25,z);let c=new THREE.Mesh(new THREE.TorusGeometry(.28,.09,8,18),gold);c.rotation.y=Math.PI/2;g.add(c);let dot=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),mat(0xfff1a1));dot.position.z=.02;g.add(dot);g.userData={type:'coin',lane,hit:false};scene.add(g);moving.push(g)}
+let saved={coins:0,hatOwned:false,hatEquipped:false,ownedHats:[],equippedHat:'',goatColour:'purple',goldColourOwned:false,profileLogo:'🐐'};
+let profileLogo=saved.profileLogo||'🐐';
+try{
+ const stored=localStorage.getItem('paathuRunSave');
+ if(stored)saved={...saved,...JSON.parse(stored)};
+}catch(e){console.warn('Could not read saved progress',e)}
+let lane=1, laneLean=0, jumpY=0, jumpV=0, sliding=0, running=false, ended=false, score=0,coins=Math.max(0,Number(saved.coins)||0),speed=15,spawn=0,coinSpawn=0,last=0;
+const hatPrices={christmas:500,gentleman:1000,police:1200};
+const hatNames={christmas:'Christmas Hat',gentleman:'British Gentleman Hat',police:'NYPD Police Hat'};
+const hatIcons={christmas:'🎅',gentleman:'🎩',police:'👮'};
+let ownedHats=Array.isArray(saved.ownedHats)?saved.ownedHats.slice():[];
+if(saved.hatOwned&&!ownedHats.includes('christmas'))ownedHats.push('christmas');
+let equippedHat=saved.equippedHat||((saved.hatEquipped&&ownedHats.includes('christmas'))?'christmas':'');
+if(!ownedHats.includes(equippedHat))equippedHat='';
+let goatColour=saved.goatColour||'purple';
+let goldColourOwned=!!saved.goldColourOwned;
+const goatColours=[
+ {id:'purple',name:'Purple',hex:0xb34be8},
+ {id:'white',name:'White',hex:0xf2eee8},
+ {id:'black',name:'Black',hex:0x29252b},
+ {id:'brown',name:'Brown',hex:0x87502f},
+ {id:'grey',name:'Grey',hex:0x858b91},
+ {id:'gold',name:'Gold',hex:0xd8a928}
+];
+function applyGoatColour(){
+ const choice=goatColours.find(c=>c.id===goatColour)||goatColours[0];
+ goatCoatMaterials.forEach(material=>{
+   if(material.color)material.color.setHex(choice.hex);
+   if(choice.id==='gold'){material.metalness=.62;material.roughness=.28;}
+   else {material.metalness=0;material.roughness=.85;}
+   material.needsUpdate=true;
+ });
+ // The simple fallback goat uses these two shared materials.
+ purple.color.setHex(choice.hex);lightPurple.color.setHex(choice.hex);
+ if(choice.id==='gold'){purple.metalness=.62;purple.roughness=.28;lightPurple.metalness=.62;lightPurple.roughness=.28;}
+ else {purple.metalness=0;purple.roughness=.85;lightPurple.metalness=0;lightPurple.roughness=.85;}
+}
+function saveProgress(){
+ const data=JSON.stringify({coins,profileLogo,hatOwned:ownedHats.includes('christmas'),hatEquipped:equippedHat==='christmas',ownedHats,equippedHat,goatColour,goldColourOwned});
+ try{localStorage.setItem('paathuRunSave',data);}
+ catch(e){console.warn('Browser storage is unavailable; progress may not persist.',e)}
+}
+function applyEquippedHat(){
+ christmasHat.visible=equippedHat==='christmas';
+ gentlemanHat.visible=equippedHat==='gentleman';
+ policeHat.visible=equippedHat==='police';
+}
+function renderShop(){
+ document.getElementById('shopCoins').textContent=coins;
+ const host=document.getElementById('shopItems');host.innerHTML='';
+ Object.keys(hatPrices).forEach(id=>{
+   const owned=ownedHats.includes(id),equipped=equippedHat===id;
+   const item=document.createElement('div');item.className='shopItem';
+   const info=document.createElement('div');info.className='shopItemInfo';
+   const preview=document.createElement('div');preview.className='hatPreview';preview.textContent=hatIcons[id];
+   const desc=document.createElement('div');
+   const strong=document.createElement('strong');strong.textContent=hatNames[id];
+   const small=document.createElement('small');small.textContent='For Paathu • '+hatPrices[id]+' coins';
+   desc.append(strong,small);info.append(preview,desc);
+   const action=document.createElement('button');
+   action.textContent=equipped?'EQUIPPED ✓':(owned?'EQUIP':'BUY • '+hatPrices[id]+' 🪙');
+   action.disabled=!owned&&coins<hatPrices[id];
+   action.addEventListener('click',()=>{
+     if(!ownedHats.includes(id)){
+       if(coins<hatPrices[id])return;
+       coins-=hatPrices[id];ownedHats.push(id);equippedHat=id;
+     }else equippedHat=equipped?'':id;
+     saveProgress();applyEquippedHat();renderShop();say(equippedHat===id?'EQUIPPED!':'HAT REMOVED');
+   });
+   item.append(info,action);host.appendChild(item);
+ });
+ document.getElementById('coins').textContent=coins;
+ applyEquippedHat();
+}
+function renderSettings(){
+ const logoHost=document.getElementById('profileLogoGrid');
+ if(logoHost){logoHost.replaceChildren();const logos=['🐐🟣','🐐⚪','🐐🕶️','🐐🎩','🐐🧢'];logos.forEach(icon=>{const b=document.createElement('button');b.className='colourChoice'+(profileLogo===icon?' selected':'');b.textContent=icon;b.addEventListener('click',()=>{profileLogo=icon;saveProgress();renderSettings();updateHudPlayer();});logoHost.appendChild(b);});}
+
+ const host=document.getElementById('colourGrid');host.innerHTML='';
+ goatColours.forEach(choice=>{
+   if(choice.id==='gold'&&!goldColourOwned)return;
+   const button=document.createElement('button');button.className='colourChoice'+(goatColour===choice.id?' selected':'');
+   const dot=document.createElement('span');dot.className='colourDot';dot.style.background='#'+choice.hex.toString(16).padStart(6,'0');
+   const label=document.createElement('span');label.textContent=choice.name+(goatColour===choice.id?' ✓':'');
+   button.append(dot,label);
+   button.addEventListener('click',()=>{goatColour=choice.id;applyGoatColour();saveProgress();renderSettings();});
+   host.appendChild(button);
+ });
+ const goldHost=document.getElementById('goldColourAction');goldHost.innerHTML='';
+ if(goldColourOwned){
+   const status=document.createElement('small');status.textContent='✨ Gold colour unlocked!';goldHost.appendChild(status);
+ }else{
+   const buy=document.createElement('button');buy.textContent='UNLOCK GOLD • 1500 🪙';
+   buy.disabled=coins<1500;buy.addEventListener('click',()=>{
+     if(coins<1500)return;coins-=1500;goldColourOwned=true;goatColour='gold';applyGoatColour();saveProgress();renderShop();renderSettings();say('GOLD COLOUR UNLOCKED!');
+   });goldHost.appendChild(buy);
+ }
+}
+function refreshShop(){renderShop();}
+const scoreEl=document.getElementById('score'),coinEl=document.getElementById('coins'),title=document.getElementById('title'),toast=document.getElementById('toast');
+function updateHudPlayer(){const n=window.PaathuAccount?.username||'GUEST';document.getElementById('hudPlayer').textContent=profileLogo+' '+n;}
+function say(t){toast.textContent=t;toast.style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>toast.style.opacity=0,650)}
+document.getElementById('shopOpen').addEventListener('click',()=>{
+ if(running)running=false;
+ renderShop();document.getElementById('shopModal').style.display='flex';
+});
+document.getElementById('shopClose').addEventListener('click',()=>{
+ document.getElementById('shopModal').style.display='none';
+ if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
+});
+document.getElementById('settingsOpen').addEventListener('click',()=>{
+ if(running)running=false;
+ renderSettings();document.getElementById('settingsModal').style.display='flex';
+});
+document.getElementById('settingsAccountButton').addEventListener('click',()=>{document.getElementById('settingsModal').style.display='none';document.getElementById('accountModal').style.display='flex';});
+document.getElementById('settingsClose').addEventListener('click',()=>{
+ document.getElementById('settingsModal').style.display='none';
+ if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
+});
+document.getElementById('pauseGameButton').addEventListener('click',()=>{if(!running)return;running=false;document.getElementById('pauseOverlay').style.display='flex';});
+document.getElementById('resumeGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';running=true;last=performance.now();});
+document.getElementById('quitGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';crash();});
+function move(d){
+ if(!running)return;
+ if(d==='left'){const old=lane;lane=Math.max(0,lane-1);if(lane!==old)laneLean=-1;}
+ if(d==='right'){const old=lane;lane=Math.min(2,lane+1);if(lane!==old)laneLean=1;}
+ if(d==='jump'&&jumpY<.05&&sliding<=0)jumpV=8.7;
+ if(d==='slide'&&jumpY<.15)sliding=.72;
+}
+applyGoatColour();refreshShop();renderSettings();
+addEventListener('pagehide',saveProgress);
+document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();move(b.dataset.move)}));
+let sx=0,sy=0;renderer.domElement.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
+renderer.domElement.addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<22)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy<0?'jump':'slide')});
+addEventListener('keydown',e=>{if(['ArrowLeft','a','ArrowRight','d','ArrowUp','w',' ','ArrowDown','s'].includes(e.key)){e.preventDefault();move(({ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'jump',w:'jump',' ':'jump',ArrowDown:'slide',s:'slide'})[e.key])}});
+function reset(){document.getElementById('pauseOverlay').style.display='none';document.getElementById('hunterWarning').style.display='none';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
+ overhead.forEach(item=>{item.group.position.z=item.initialZ;});
+ trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
+let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
+function start(){
+ reset();running=false;title.classList.add('story');document.body.classList.add('playing');document.getElementById('storySkip').style.display='block';title.querySelector('h1').textContent='A QUIET FOREST...';
+ document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
+ hunter.visible=false;
+ const started=performance.now();last=started;
+ function reveal(now){
+   if(title.style.display==='none')return;
+   const elapsed=now-started;
+   // Give each story beat enough time to read before changing the screen.
+   if(elapsed<2700){
+     title.querySelector('h1').textContent='A QUIET FOREST...';
+     document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
+     hunter.visible=false;
+   }else if(elapsed<5600){
+     title.querySelector('h1').textContent='A SNAP IN THE TREES!';
+     document.getElementById('titleSub').textContent='Something is following Paathu through the forest...';
+     hunter.visible=true;
+     hunter.position.set(0,0,8.2-(elapsed-2700)*.00035);
+     hunter.rotation.y=Math.sin(elapsed*.001)*.08;
+   }else if(elapsed<7600){
+     title.querySelector('h1').textContent='THE HUNTER!';
+     document.getElementById('titleSub').textContent='Run, Paathu! Swipe to dodge, jump and slide.';
+     hunter.visible=true;
+     hunter.position.set(0,0,6.9);
+   }else{
+     hunter.visible=false;document.getElementById('storySkip').style.display='none';
+     title.classList.remove('story');title.style.display='none';running=true;
+     hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
+     document.getElementById('hud').style.display='flex';
+     document.getElementById('controls').style.display='flex';
+     last=performance.now();
+     return;
+   }
+   requestAnimationFrame(reveal);
+ }
+ requestAnimationFrame(reveal);
+}
+document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='flex';last=performance.now();});
+document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
+/* Leaderboard button is wired by the account controller below. */
+document.getElementById('titleSettingsButton').addEventListener('click',()=>{renderSettings();document.getElementById('settingsModal').style.display='flex';});
+
+function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.classList.remove('story');title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
+function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
+ if(running){
+ // Road markings and scenery stream toward the goat to sell forward motion.
+ for(const dash of laneDashes){dash.position.z+=speed*dt;if(dash.position.z>8)dash.position.z-=115;}
+ for(const sleeper of trackScroll){sleeper.position.z+=speed*dt;if(sleeper.position.z>8)sleeper.position.z-=127;}
+ for(const item of roadsideProps){item.group.position.z+=speed*dt;if(item.group.position.z>13)item.group.position.z-=120;}
+ for(const item of overhead){item.group.position.z+=speed*dt;if(item.group.position.z>12)item.group.position.z-=128;}
+ for(const cloud of clouds){cloud.position.x+=Math.sin(t*.00025+cloud.position.z)*dt*.08;}
+ tail.rotation.x=Math.sin(t*.018)*.28;
+ // Hunter chase lasts roughly 10 seconds. A flashing warning gives time to change lanes before each shot.
+ if(hunterPhase==='hidden'){
+   hunter.visible=false;hunterCooldown-=dt;
+   if(hunterCooldown<=0){hunterPhase='enter';hunterPhaseTime=0;hunter.visible=true;hunter.position.set(goat.position.x*.5,0,12.5);hunterShots=0;hunterTargetLane=lane;}
+ }else{
+   hunterPhaseTime+=dt;hunter.visible=true;
+   hunter.position.x=THREE.MathUtils.damp(hunter.position.x,goat.position.x*.55,2.5,dt);
+   hunter.rotation.z=Math.sin(t*.014)*.045;
+   if(hunterPhase==='enter'){
+     hunter.position.z=THREE.MathUtils.damp(hunter.position.z,7.0,2.2,dt);
+     if(hunterPhaseTime>2){hunterPhase='warning';hunterPhaseTime=0;}
+   }else if(hunterPhase==='warning'){
+     hunter.position.z=7.0;document.getElementById('hunterWarning').style.display='block';
+     if(hunterPhaseTime>1.25){document.getElementById('hunterWarning').style.display='none';muzzleFlash.visible=true;setTimeout(()=>{muzzleFlash.visible=false},180);if(lane===hunterTargetLane)crash();hunterPhase='aftershot';hunterPhaseTime=0;}
+   }else if(hunterPhase==='aftershot'){
+     hunter.position.z=7.0; if(hunterPhaseTime>1.4){hunterShots++;if(hunterShots>=3){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
+   }else if(hunterPhase==='exit'){
+     document.getElementById('hunterWarning').style.display='none';hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
+     if(hunterPhaseTime>2){hunterPhase='hidden';hunter.visible=false;hunterCooldown=15+Math.random()*8;}
+   }
+ }
+ if(goatMixer)goatMixer.update(dt);
+ if(goatModel){
+   goatModelRoot.position.y=Math.sin(t*.018)*.035;
+   goatModelRoot.rotation.z=Math.sin(t*.006)*.012;
+   const gait=Math.sin(t*.018);
+   goatLegNodes.forEach((node,i)=>{node.rotation.x=gait*((i%2===0)?1:-1)*.28;});
+   if(goatPartsByName.Head)goatPartsByName.Head.rotation.x=Math.sin(t*.012)*.035;
+   if(goatPartsByName.Tail)goatPartsByName.Tail.rotation.x=Math.sin(t*.025)*.18;
+   if(goatPartsByName.LeftEar)goatPartsByName.LeftEar.rotation.z=Math.sin(t*.02)*.07;
+   if(goatPartsByName.RightEar)goatPartsByName.RightEar.rotation.z=-Math.sin(t*.02)*.07;
+ }
+ score+=dt*speed*.65;
+ // Difficulty rises in clear 500m stages rather than accelerating constantly.
+ const stage=Math.floor(score/250);
+ speed=Math.min(32,15+stage*1.15);
+ scoreEl.textContent=Math.floor(score);
+ goat.position.x=THREE.MathUtils.damp(goat.position.x,[-1.5,0,1.5][lane],16,dt);
+ laneLean=THREE.MathUtils.damp(laneLean,0,5.5,dt);
+ goat.rotation.z=THREE.MathUtils.damp(goat.rotation.z,-laneLean*.13,10,dt);
+ goat.rotation.y=THREE.MathUtils.damp(goat.rotation.y,laneLean*.09,9,dt);
+ camera.position.x=THREE.MathUtils.damp(camera.position.x,goat.position.x*.10,3,dt);
+ camera.lookAt(goat.position.x*.06,1.15,-6);
+ if(jumpV!==0||jumpY>0){jumpV-=20*dt;jumpY+=jumpV*dt;if(jumpY<=0){jumpY=0;jumpV=0;goat.scale.y=.88;}}
+ goat.position.y=jumpY;
+ sliding=Math.max(0,sliding-dt);
+ const desiredScaleY=sliding>0?.62:(jumpY===0?1:1);
+ goat.scale.y=THREE.MathUtils.damp(goat.scale.y,desiredScaleY,sliding>0?18:12,dt);
+ goat.rotation.x=THREE.MathUtils.damp(goat.rotation.x,sliding>0?-.16:(jumpY>0?.08:0),10,dt);
+ goat.position.z=3;
+ 
+ spawn-=dt;coinSpawn-=dt;
+ if(spawn<=0){let l=Math.floor(Math.random()*3),types=['rock','rock','log','crate','branch','stump','fallen_branch','mushrooms','boulder','roots','giant_boulder','fallen_tree','thorn_wall'];addObstacle(l,-75,types[Math.floor(Math.random()*types.length)]);spawn=Math.max(.92,1.48-(speed-15)*.025)}
+ if(Math.random()<dt*.12){let wl=Math.floor(Math.random()*3);addObstacle(wl,-82,'water')}
+ if(coinSpawn<=0){const patterns=['line','zigzag','switch','short'];const pattern=patterns[Math.floor(Math.random()*patterns.length)];let l=Math.floor(Math.random()*3);const count=pattern==='short'?3:pattern==='line'?7:6;for(let i=0;i<count;i++){if(pattern==='zigzag'&&i%2)l=(l+1)%3;if(pattern==='switch'&&i===3)l=(l+1+Math.floor(Math.random()*2))%3;addCoin(l,-48-i*2.15);}coinSpawn=1.7+Math.random()*1.7}
+ for(let i=moving.length-1;i>=0;i--){let o=moving[i];o.position.z+=speed*dt;if(o.userData.type==='coin')o.rotation.y+=dt*3;
+ if(o.userData.type==='coin'&&!o.userData.hit&&o.position.z>=1.9&&o.position.z<=4.1){
+   const same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.72;
+   if(same){
+     o.userData.hit=true;coins++;saveProgress();refreshShop();
+     scene.remove(o);moving.splice(i,1);continue;
+   }
+ }
+ if(o.userData.type!=='coin'&&o.userData.type!=='water'&&!o.userData.hit&&o.position.z>=2.0&&o.position.z<=4.0){
+   o.userData.hit=true;
+   const same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.72;
+   if(same){
+     const jumpHeights={rock:.62,log:.78,stump:.82,fallen_branch:.52,mushrooms:.42,roots:.42};
+     const laneChangeOnly=['crate','boulder','giant_boulder','fallen_tree','thorn_wall','train'].includes(o.userData.type);
+     const safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:(jumpHeights[o.userData.type]!==undefined&&jumpY>jumpHeights[o.userData.type]));
+     if(!safe)crash();
+   }
+ }
+ if(o.position.z>9){scene.remove(o);moving.splice(i,1)}}
+ }
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+<script>
+/* PAATHU account integration: plain fetch works in Android WebView without ES-module imports. */
+(() => {
+ const SUPABASE_URL='https://pthtqtfsmnfiduhgigfa.supabase.co';
+ const SUPABASE_KEY='sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx';
+ const el=id=>document.getElementById(id);
+ let session=null, currentUser=null;
+ const sessionKey='paathuSupabaseSession';
+ const headers=(token)=>{const h={'apikey':SUPABASE_KEY,'Content-Type':'application/json'};if(token)h.Authorization='Bearer '+token;return h;};
+ function message(t){const n=el('paathuMessage');if(n)n.textContent=t;}
+ function showAccount(){
+   const username=currentUser?.user_metadata?.username||currentUser?.email?.split('@')[0]||'';
+   el('paathuAccountStatus').textContent=currentUser?'Logged in as @'+username:'Playing as guest';
+   el('paathuLogout').style.display=currentUser?'block':'none';
+   el('paathuIdentity').textContent=currentUser?'👤 @'+username:'👤 GUEST MODE';
+   el('paathuIdentity').style.display='block';
+   window.PaathuAccount=window.PaathuAccount||{};
+   window.PaathuAccount.username=currentUser?'@'+username:'GUEST';
+   let save={};try{save=JSON.parse(localStorage.getItem('paathuRunSave')||'{}')}catch(_){}
+   const hud=el('hudPlayer');if(hud)hud.textContent=(save.profileLogo||'🐐')+' '+window.PaathuAccount.username;
+ }
+ async function api(path,opts={}){
+   const res=await fetch(SUPABASE_URL+path,{...opts,headers:{...headers(opts.token),...(opts.headers||{})}});
+   const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}
+   if(!res.ok)throw new Error(data.msg||data.message||data.error_description||data.error||('Request failed ('+res.status+')'));
+   return data;
+ }
+ function saveSession(data){session=data?.access_token?data:null;currentUser=session?.user||null;if(session)localStorage.setItem(sessionKey,JSON.stringify(session));else localStorage.removeItem(sessionKey);showAccount();}
+ async function refreshAccount(){
+   try{
+     const raw=localStorage.getItem(sessionKey);if(!raw){showAccount();return;}
+     const saved=JSON.parse(raw);
+     if(saved.refresh_token){
+       try{const fresh=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:saved.refresh_token})});saveSession(fresh);return;}
+       catch(_){if(saved.access_token){try{const user=await api('/auth/v1/user',{token:saved.access_token});session={...saved,user};currentUser=user;localStorage.setItem(sessionKey,JSON.stringify(session));showAccount();return;}catch(__){}}saveSession(null);}
+     }else saveSession(null);
+   }catch(e){console.warn('Account restore failed',e);showAccount();}
+ }
+ async function openAccount(){el('accountModal').style.display='flex';message('Checking account...');await refreshAccount();message('');}
+ el('settingsAccountButton').addEventListener('click',openAccount);
+ el('paathuAccountClose').addEventListener('click',()=>el('accountModal').style.display='none');
+ el('paathuGuest').addEventListener('click',()=>{localStorage.setItem('paathuRunMode','guest');el('accountModal').style.display='none';message('');});
+ el('paathuRegister').addEventListener('click',async()=>{
+   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value,username=el('paathuUsername').value.trim();
+   if(!email||password.length<8||!/^[a-zA-Z0-9_]{3,20}$/.test(username)){message('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');return;}
+   const btn=el('paathuRegister');btn.disabled=true;message('Creating account...');
+   try{const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password,data:{username}})});if(data.access_token){saveSession(data);message('Account created and logged in!');}else message('Account created. Check your email to confirm it, then use LOG IN.');}
+   catch(e){message(e.message);}finally{btn.disabled=false;}
+ });
+ el('paathuLogin').addEventListener('click',async()=>{
+   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
+   if(!email||!password){message('Enter your email and password.');return;}
+   const btn=el('paathuLogin');btn.disabled=true;message('Logging in...');
+   try{const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});saveSession(data);localStorage.setItem('paathuRunMode','account');message('Welcome back!');}
+   catch(e){message(e.message);}finally{btn.disabled=false;}
+ });
+ el('paathuLogout').addEventListener('click',async()=>{try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST',token:session.access_token});}catch(e){message(e.message);return;}saveSession(null);message('Logged out. Your local game progress remains on this device.');});
+ async function loadLeaderboard(){
+   const target=el('paathuLeaderboard');target.textContent='Loading rankings...';
+   try{const data=await api('/rest/v1/global_leaderboard?select=rank,username,best_distance,user_id&order=rank.asc&limit=100');target.replaceChildren();if(!data.length){target.textContent='No players yet. Be the first to set a record!';return;}
+     data.forEach(player=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+player.rank+'  @'+player.username+' — '+player.best_distance+' m';target.appendChild(row);});
+     if(currentUser){const mine=await api('/rest/v1/global_leaderboard?select=rank,username,best_distance,user_id&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';own.textContent=mine.length?'YOUR POSITION: #'+mine[0].rank+' — '+mine[0].best_distance+' m':'You have no submitted run yet.';target.appendChild(own);}
+   }catch(e){target.textContent='Leaderboard error: '+e.message;}
+ }
+ function openLeaderboard(){el('leaderboardModal').style.display='flex';loadLeaderboard();}
+ el('titleLeaderboardButton').addEventListener('click',openLeaderboard);
+ el('paathuLeaderboardClose').addEventListener('click',()=>el('leaderboardModal').style.display='none');
+ window.openPaathuAccount=openAccount;window.openPaathuLeaderboard=openLeaderboard;
+ window.PaathuAccount={username:'GUEST',async submitBestRun(distance){
+   if(!currentUser||!session?.access_token||!Number.isFinite(distance)||distance<0)return;
+   try{const prior=await api('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1',{token:session.access_token});const best=Math.max(Math.floor(distance),Number(prior[0]?.best_distance)||0);if(best<=(Number(prior[0]?.best_distance)||0))return;await api('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',token:session.access_token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});}catch(e){console.warn('Best run upload failed',e);}
+ }};
+ refreshAccount();
+})();
+</script>
+</body>
+</html>
