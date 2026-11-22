@@ -16,11 +16,11 @@ h1{font-size:clamp(46px,13vw,76px);line-height:1;margin:0;color:#fff36b;letter-s
 button{border:0;border-radius:16px;background:#a9e85e;color:#14200d;font-weight:900;font-size:18px;padding:14px 24px;box-shadow:0 5px 0 #5d9632}
 button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 #help{display:none}
-#title .menu-actions{display:grid;gap:12px;width:min(82vw,300px);margin:22px auto 0}
+#title.story .menu-actions{display:none}#title.story .panel{transform:translateY(-4vh)}#title .menu-actions{display:grid;gap:12px;width:min(82vw,300px);margin:22px auto 0}
 #title .menu-actions button{width:100%;font-size:17px}
 #title .menu-actions .menu-alt{background:#183b30;color:#fff2a1;box-shadow:0 5px 0 #10251d;border:1px solid #b7e58a}
 #paathuIdentity{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:25;display:none;background:#183b30dd;border:1px solid #b7e58a;border-radius:14px;padding:8px 11px;font-size:12px;font-weight:800;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#controls{display:none!important;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
+#controls{display:none;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
 .pad{display:flex;gap:8px;pointer-events:auto}
 .pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
 #pauseGameButton{pointer-events:auto;padding:5px 14px;font-size:20px;border-radius:12px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:none}
@@ -460,7 +460,7 @@ function addObstacle(lane,z,type){
      lamp.position.set(x,.55,1.29);g.add(lamp);
    }
  }
- moving.push(g);return g;
+ g.scale.setScalar(1.12);moving.push(g);return g;
 }
 function addCoin(lane,z){let g=new THREE.Group();g.position.set([-1.5,0,1.5][lane],1.25,z);let c=new THREE.Mesh(new THREE.TorusGeometry(.28,.09,8,18),gold);c.rotation.y=Math.PI/2;g.add(c);let dot=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),mat(0xfff1a1));dot.position.z=.02;g.add(dot);g.userData={type:'coin',lane,hit:false};scene.add(g);moving.push(g)}
 let saved={coins:0,hatOwned:false,hatEquipped:false,ownedHats:[],equippedHat:'',goatColour:'purple',goldColourOwned:false,profileLogo:'🐐'};
@@ -539,7 +539,7 @@ function renderShop(){
 }
 function renderSettings(){
  const logoHost=document.getElementById('profileLogoGrid');
- if(logoHost){logoHost.replaceChildren();const logos=['🐐','🐐🕶️','🐐🎩','🐐🧢','🐐👑'];logos.forEach(icon=>{const b=document.createElement('button');b.className='colourChoice'+(profileLogo===icon?' selected':'');b.textContent=icon;b.addEventListener('click',()=>{profileLogo=icon;saveProgress();renderSettings();updateHudPlayer();});logoHost.appendChild(b);});}
+ if(logoHost){logoHost.replaceChildren();const logos=['🐐🟣','🐐⚪','🐐🕶️','🐐🎩','🐐🧢'];logos.forEach(icon=>{const b=document.createElement('button');b.className='colourChoice'+(profileLogo===icon?' selected':'');b.textContent=icon;b.addEventListener('click',()=>{profileLogo=icon;saveProgress();renderSettings();updateHudPlayer();});logoHost.appendChild(b);});}
 
  const host=document.getElementById('colourGrid');host.innerHTML='';
  goatColours.forEach(choice=>{
@@ -603,7 +603,7 @@ function reset(){document.getElementById('pauseOverlay').style.display='none';do
  trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
 let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
 function start(){
- reset();running=false;document.body.classList.add('playing');document.getElementById('storySkip').style.display='block';title.querySelector('h1').textContent='A QUIET FOREST...';
+ reset();running=false;title.classList.add('story');document.body.classList.add('playing');document.getElementById('storySkip').style.display='block';title.querySelector('h1').textContent='A QUIET FOREST...';
  document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
  hunter.visible=false;
  const started=performance.now();last=started;
@@ -628,7 +628,7 @@ function start(){
      hunter.position.set(0,0,6.9);
    }else{
      hunter.visible=false;document.getElementById('storySkip').style.display='none';
-     title.style.display='none';running=true;
+     title.classList.remove('story');title.style.display='none';running=true;
      hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
      document.getElementById('hud').style.display='flex';
      document.getElementById('controls').style.display='flex';
@@ -639,12 +639,12 @@ function start(){
  }
  requestAnimationFrame(reveal);
 }
-document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='flex';last=performance.now();});
+document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='flex';last=performance.now();});
 document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
-document.getElementById('titleLeaderboardButton').addEventListener('click',()=>document.getElementById('leaderboardOpen').click());
-document.getElementById('titleSettingsButton').addEventListener('click',()=>document.getElementById('settingsOpen').click());
+/* Leaderboard button is wired by the account controller below. */
+document.getElementById('titleSettingsButton').addEventListener('click',()=>{renderSettings();document.getElementById('settingsModal').style.display='flex';});
 
-function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
+function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.classList.remove('story');title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
 function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
  if(running){
  // Road markings and scenery stream toward the goat to sell forward motion.
@@ -720,88 +720,78 @@ requestAnimationFrame(animate);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
 <script>
-/* PAATHU RUN account client: plain WebView-compatible REST calls.
-   Avoids JavaScript module imports from file://, which can silently fail in Android WebView. */
-(function () {
- const PROJECT='https://pthtqtfsmnfiduhgigfa.supabase.co';
- const API_KEY='sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx';
+/* PAATHU account integration: plain fetch works in Android WebView without ES-module imports. */
+(() => {
+ const SUPABASE_URL='https://pthtqtfsmnfiduhgigfa.supabase.co';
+ const SUPABASE_KEY='sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx';
  const el=id=>document.getElementById(id);
- let currentUser=null, accessToken=null;
- try {
-  const saved=JSON.parse(localStorage.getItem('paathuAuthSession')||'null');
-  if(saved && saved.access_token && saved.user){accessToken=saved.access_token;currentUser=saved.user;}
- } catch(e) {}
+ let session=null, currentUser=null;
+ const sessionKey='paathuSupabaseSession';
+ const headers=(token)=>{const h={'apikey':SUPABASE_KEY,'Content-Type':'application/json'};if(token)h.Authorization='Bearer '+token;return h;};
  function message(t){const n=el('paathuMessage');if(n)n.textContent=t;}
- function headers(extra){return Object.assign({'apikey':API_KEY,'Content-Type':'application/json'},accessToken?{Authorization:'Bearer '+accessToken}:{Authorization:'Bearer '+API_KEY},extra||{});}
- async function request(path,opts={}){
-  const response=await fetch(PROJECT+path,Object.assign({headers:headers()},opts));
-  const body=await response.json().catch(()=>({}));
-  if(!response.ok) throw new Error(body.msg||body.message||body.error_description||body.error||('Request failed ('+response.status+')'));
-  return body;
+ function showAccount(){
+   const username=currentUser?.user_metadata?.username||currentUser?.email?.split('@')[0]||'';
+   el('paathuAccountStatus').textContent=currentUser?'Logged in as @'+username:'Playing as guest';
+   el('paathuLogout').style.display=currentUser?'block':'none';
+   el('paathuIdentity').textContent=currentUser?'👤 @'+username:'👤 GUEST MODE';
+   el('paathuIdentity').style.display='block';
+   window.PaathuAccount=window.PaathuAccount||{};
+   window.PaathuAccount.username=currentUser?'@'+username:'GUEST';
+   let save={};try{save=JSON.parse(localStorage.getItem('paathuRunSave')||'{}')}catch(_){}
+   const hud=el('hudPlayer');if(hud)hud.textContent=(save.profileLogo||'🐐')+' '+window.PaathuAccount.username;
  }
- function saveSession(data){
-  accessToken=data.access_token||null;currentUser=data.user||null;
-  if(accessToken&&currentUser)localStorage.setItem('paathuAuthSession',JSON.stringify(data));
-  else localStorage.removeItem('paathuAuthSession');
-  updateAccount();
+ async function api(path,opts={}){
+   const res=await fetch(SUPABASE_URL+path,{...opts,headers:{...headers(opts.token),...(opts.headers||{})}});
+   const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={message:raw}}
+   if(!res.ok)throw new Error(data.msg||data.message||data.error_description||data.error||('Request failed ('+res.status+')'));
+   return data;
  }
- function updateAccount(){
-  const username=currentUser?.user_metadata?.username||currentUser?.email||'';
-  if(el('paathuAccountStatus'))el('paathuAccountStatus').textContent=currentUser?'Logged in as @'+username:'Playing as guest';
-  if(el('paathuLogout'))el('paathuLogout').style.display=currentUser?'block':'none';
-  if(el('paathuIdentity')){el('paathuIdentity').textContent=currentUser?'👤 @'+username:'👤 GUEST MODE';el('paathuIdentity').style.display='block';}
-  window.PaathuAccount.username=currentUser?'@'+username:'GUEST';
-  try{const logo=JSON.parse(localStorage.getItem('paathuRunSave')||'{}').profileLogo||'🐐';if(el('hudPlayer'))el('hudPlayer').textContent=logo+' '+window.PaathuAccount.username;}catch(e){}
- }
+ function saveSession(data){session=data?.access_token?data:null;currentUser=session?.user||null;if(session)localStorage.setItem(sessionKey,JSON.stringify(session));else localStorage.removeItem(sessionKey);showAccount();}
  async function refreshAccount(){
-  if(!accessToken){updateAccount();return;}
-  try{const d=await request('/auth/v1/user',{headers:headers()});currentUser=d;updateAccount();}
-  catch(e){accessToken=null;currentUser=null;localStorage.removeItem('paathuAuthSession');updateAccount();}
+   try{
+     const raw=localStorage.getItem(sessionKey);if(!raw){showAccount();return;}
+     const saved=JSON.parse(raw);
+     if(saved.refresh_token){
+       try{const fresh=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:saved.refresh_token})});saveSession(fresh);return;}
+       catch(_){if(saved.access_token){try{const user=await api('/auth/v1/user',{token:saved.access_token});session={...saved,user};currentUser=user;localStorage.setItem(sessionKey,JSON.stringify(session));showAccount();return;}catch(__){}}saveSession(null);}
+     }else saveSession(null);
+   }catch(e){console.warn('Account restore failed',e);showAccount();}
  }
- el('accountOpen').addEventListener('click',async()=>{el('accountModal').style.display='flex';message('');await refreshAccount();});
- el('paathuAccountClose').addEventListener('click',()=>{el('accountModal').style.display='none';});
+ async function openAccount(){el('accountModal').style.display='flex';message('Checking account...');await refreshAccount();message('');}
+ el('settingsAccountButton').addEventListener('click',openAccount);
+ el('paathuAccountClose').addEventListener('click',()=>el('accountModal').style.display='none');
  el('paathuGuest').addEventListener('click',()=>{localStorage.setItem('paathuRunMode','guest');el('accountModal').style.display='none';message('');});
  el('paathuRegister').addEventListener('click',async()=>{
-  const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value,username=el('paathuUsername').value.trim();
-  if(!email||password.length<8||!/^[a-zA-Z0-9_]{3,20}$/.test(username)){message('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');return;}
-  const b=el('paathuRegister');b.disabled=true;message('Creating account…');
-  try{const d=await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password,data:{username}})});
-   if(d.access_token)saveSession(d);message(d.access_token?'Account created and logged in!':'Account created. Check your email to confirm, then log in.');
-  }catch(e){message('Sign-up failed: '+e.message);}finally{b.disabled=false;}
+   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value,username=el('paathuUsername').value.trim();
+   if(!email||password.length<8||!/^[a-zA-Z0-9_]{3,20}$/.test(username)){message('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');return;}
+   const btn=el('paathuRegister');btn.disabled=true;message('Creating account...');
+   try{const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password,data:{username}})});if(data.access_token){saveSession(data);message('Account created and logged in!');}else message('Account created. Check your email to confirm it, then use LOG IN.');}
+   catch(e){message(e.message);}finally{btn.disabled=false;}
  });
  el('paathuLogin').addEventListener('click',async()=>{
-  const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
-  if(!email||!password){message('Enter your email and password.');return;}
-  const b=el('paathuLogin');b.disabled=true;message('Logging in…');
-  try{const d=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
-   saveSession(d);localStorage.setItem('paathuRunMode','account');message('Welcome back, '+(d.user?.user_metadata?.username||email)+'!');
-  }catch(e){message('Login failed: '+e.message);}finally{b.disabled=false;}
+   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
+   if(!email||!password){message('Enter your email and password.');return;}
+   const btn=el('paathuLogin');btn.disabled=true;message('Logging in...');
+   try{const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});saveSession(data);localStorage.setItem('paathuRunMode','account');message('Welcome back!');}
+   catch(e){message(e.message);}finally{btn.disabled=false;}
  });
- el('paathuLogout').addEventListener('click',async()=>{
-  try{if(accessToken)await request('/auth/v1/logout',{method:'POST'});}catch(e){}
-  accessToken=null;currentUser=null;localStorage.removeItem('paathuAuthSession');updateAccount();message('Logged out. Guest progress remains on this device.');
- });
- async function loadPaathuLeaderboard(){
-  const target=el('paathuLeaderboard');target.textContent='Loading rankings…';
-  try{
-   const data=await request('/rest/v1/global_leaderboard?select=rank,username,best_distance&order=rank.asc&limit=100');
-   target.replaceChildren();
-   if(!data.length){target.textContent='No players yet. Be the first to set a record!';return;}
-   data.forEach(p=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+p.rank+'  @'+p.username+' — '+p.best_distance+' m';target.appendChild(row);});
-   if(currentUser){const mine=await request('/rest/v1/global_leaderboard?select=rank,username,best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';own.textContent=mine.length?'YOUR POSITION: #'+mine[0].rank+' — '+mine[0].best_distance+' m':'You have no submitted run yet.';target.appendChild(own);}
-  }catch(e){target.textContent='Leaderboard error: '+e.message;}
+ el('paathuLogout').addEventListener('click',async()=>{try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST',token:session.access_token});}catch(e){message(e.message);return;}saveSession(null);message('Logged out. Your local game progress remains on this device.');});
+ async function loadLeaderboard(){
+   const target=el('paathuLeaderboard');target.textContent='Loading rankings...';
+   try{const data=await api('/rest/v1/global_leaderboard?select=rank,username,best_distance,user_id&order=rank.asc&limit=100');target.replaceChildren();if(!data.length){target.textContent='No players yet. Be the first to set a record!';return;}
+     data.forEach(player=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+player.rank+'  @'+player.username+' — '+player.best_distance+' m';target.appendChild(row);});
+     if(currentUser){const mine=await api('/rest/v1/global_leaderboard?select=rank,username,best_distance,user_id&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';own.textContent=mine.length?'YOUR POSITION: #'+mine[0].rank+' — '+mine[0].best_distance+' m':'You have no submitted run yet.';target.appendChild(own);}
+   }catch(e){target.textContent='Leaderboard error: '+e.message;}
  }
- el('leaderboardOpen').addEventListener('click',async()=>{el('leaderboardModal').style.display='flex';await loadPaathuLeaderboard();});
- el('paathuLeaderboardClose').addEventListener('click',()=>{el('leaderboardModal').style.display='none';});
+ function openLeaderboard(){el('leaderboardModal').style.display='flex';loadLeaderboard();}
+ el('titleLeaderboardButton').addEventListener('click',openLeaderboard);
+ el('paathuLeaderboardClose').addEventListener('click',()=>el('leaderboardModal').style.display='none');
+ window.openPaathuAccount=openAccount;window.openPaathuLeaderboard=openLeaderboard;
  window.PaathuAccount={username:'GUEST',async submitBestRun(distance){
-  if(!currentUser||!accessToken||!Number.isFinite(distance)||distance<0)return;
-  try{
-   const old=await request('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');
-   const best=Math.max(Math.floor(distance),Number(old[0]?.best_distance)||0);if(best<=(Number(old[0]?.best_distance)||0))return;
-   await request('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});
-  }catch(e){console.warn('Best run upload failed',e);}
+   if(!currentUser||!session?.access_token||!Number.isFinite(distance)||distance<0)return;
+   try{const prior=await api('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1',{token:session.access_token});const best=Math.max(Math.floor(distance),Number(prior[0]?.best_distance)||0);if(best<=(Number(prior[0]?.best_distance)||0))return;await api('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',token:session.access_token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});}catch(e){console.warn('Best run upload failed',e);}
  }};
- updateAccount();refreshAccount();
+ refreshAccount();
 })();
 </script>
 </body>

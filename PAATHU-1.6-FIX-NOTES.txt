@@ -1,0 +1,14 @@
+PAATHU RUN 1.6 source repair
+
+Changes made from the uploaded current source:
+- Fixed account screen JavaScript crash: removed listeners targeting missing accountOpen/leaderboardOpen elements.
+- Replaced the Supabase ES-module SDK import with direct Supabase Auth/REST fetch calls compatible with Android WebView local assets.
+- Added login, signup, session refresh/restore, logout, leaderboard load and best-run submission handling with visible error messages.
+- Wired the main-menu leaderboard button directly to the leaderboard modal and settings button directly to settings.
+- Fixed story intro so menu buttons are hidden while the story plays.
+- Fixed on-screen controls CSS: display:flex was previously blocked by display:none!important.
+- Added coloured goat profile-logo variations and increased obstacle model scale slightly.
+- Existing source already contained the Hunter rifle/warning sequence, speed increase every 250m, and randomized multi-lane coin patterns; these were retained.
+
+Android package remains com.paathurun.game.preview, versionCode 6, versionName 1.6.
+Keep the installed app and its signing key. Install this build over the current preview app; do not uninstall or clear app data.
