@@ -200,17 +200,18 @@ box(.16,.08,145,pathEdgeMat,-3.82,.055,-48);
 box(.16,.08,145,pathEdgeMat,3.82,.055,-48);
 // Distant mountain layers: broad overlapping peaks create a scenic horizon.
 const mountainMats=[mat(0x789b9c),mat(0x668b83),mat(0x557b70),mat(0x8ca9a4)];
+const mountainPeaks=[],foothills=[];
 for(let i=0;i<13;i++){
  const x=-65+i*10.8, h=17+(i%4)*5, r=13+(i%3)*3;
  const peak=new THREE.Mesh(new THREE.ConeGeometry(r,h,5),mountainMats[i%mountainMats.length]);
- peak.position.set(x,h*.42,-91-(i%3)*8);peak.rotation.y=(i%2)*.4;scene.add(peak);
+ peak.position.set(x,h*.42,-91-(i%3)*8);peak.rotation.y=(i%2)*.4;scene.add(peak);mountainPeaks.push(peak);
  // Pale rocky cap on taller distant peaks.
- if(h>27){const cap=new THREE.Mesh(new THREE.ConeGeometry(r*.32,h*.25,5),mat(0xe2eee8));cap.position.set(x,h*.82,-91-(i%3)*8);scene.add(cap);}
+ if(h>27){const cap=new THREE.Mesh(new THREE.ConeGeometry(r*.32,h*.25,5),mat(0xe2eee8));cap.position.set(x,h*.82,-91-(i%3)*8);scene.add(cap);mountainPeaks.push(cap);}
 }
 // Forested foothills in front of the mountains.
 for(let i=0;i<17;i++){
  const hill=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat(i%2?0x4b8757:0x60935b));
- hill.scale.set(9+(i%3)*3,5+(i%4),5);hill.position.set(-72+i*9,1.2,-62-(i%3)*5);scene.add(hill);
+ hill.scale.set(9+(i%3)*3,5+(i%4),5);hill.position.set(-72+i*9,1.2,-62-(i%3)*5);scene.add(hill);foothills.push(hill);
 }
 // Pine tree builder; each tree is a grouped trunk and layered green canopy.
 const roadsideProps=[];
@@ -238,6 +239,43 @@ for(let side of [-1,1]){
    scene.add(group);roadsideProps.push({group,initialZ:z,phase:i*.5+side});
  }
 }
+// Alternate biome props: desert cacti, snowy pines, and city blocks.
+const biomeProps={desert:[],snow:[],city:[]};
+const desertMat=mat(0x4f8a48),desertFlower=mat(0xd9b65f),snowMat=mat(0xeaf4f7),cityMats=[mat(0x596779),mat(0x7d8793),mat(0x485666),mat(0x9a8878)];
+for(const biome of Object.keys(biomeProps)){
+ for(const side of [-1,1]){
+  for(let i=0;i<13;i++){
+   const g=new THREE.Group(),z=-i*10-8,x=side*(7.4+(i%3)*2);
+   g.position.set(x,0,z);
+   if(biome==='desert'){
+    const cactus=new THREE.Group();
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,2.0,7),desertMat);stem.position.y=1;cactus.add(stem);
+    const arm1=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.9,7),desertMat);arm1.position.set(.28,1.05,0);arm1.rotation.z=-.65;cactus.add(arm1);
+    const arm2=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.75,7),desertMat);arm2.position.set(-.27,.85,0);arm2.rotation.z=.65;cactus.add(arm2);
+    g.add(cactus);
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.65,0),desertFlower);rock.position.set(side*.7,.25,-.4);g.add(rock);
+   }else if(biome==='snow'){
+    const pine=new THREE.Group();makePine(pine,5.8+(i%4),i+1);
+    pine.traverse(o=>{if(o.isMesh&&o.geometry.type==='ConeGeometry')o.material=snowMat;});
+    g.add(pine);
+    const snowRock=new THREE.Mesh(new THREE.DodecahedronGeometry(.75,0),snowMat);snowRock.position.set(side*.8,.3,-.6);g.add(snowRock);
+   }else{
+    const h=3.5+(i%5)*1.25,w=1.5+(i%3)*.45;
+    const building=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),cityMats[i%cityMats.length]);building.position.y=h/2;g.add(building);
+    for(let wy=0;wy<Math.floor(h/.8);wy++)for(let wx of [-.35,.35]){
+     const win=new THREE.Mesh(new THREE.BoxGeometry(.18,.22,.025),mat(0xffd77a));win.position.set(wx,.65+wy*.72,w/2+.016);g.add(win);
+    }
+   }
+   scene.add(g);biomeProps[biome].push({group:g});
+  }
+ }
+}
+const citySkyline=[];
+for(let i=0;i<18;i++){
+ const h=8+(i%6)*2.2,w=4+(i%3)*1.5;
+ const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,3),cityMats[i%cityMats.length]);
+ b.position.set(-48+i*5.7,h/2,-83-(i%3)*4);scene.add(b);citySkyline.push(b);
+}
 // Small trail stones and tufts scroll toward the runner.
 const trackScroll=[];
 for(let z=5;z>-122;z-=4.5){
@@ -253,6 +291,28 @@ for(let z=4;z>-112;z-=7){
  }
  scene.add(dash);laneDashes.push(dash);
 }
+let activeBiome=-1;
+function applyBiome(stage){
+ const biome=['forest','desert','snow','city','forest'][stage%5];
+ if(biome===activeBiome)return;
+ activeBiome=biome;
+ const palettes={
+  forest:{sky:0x9bdcf4,fog:0x9bdcf4,ground:0x4b914b,floor:0x5eaa55,path:0xb58b59,edge:0x80613f,hill:0x60935b,mountain:0x668b83},
+  desert:{sky:0xf1c77d,fog:0xe9c17c,ground:0xc99a55,floor:0xd9b873,path:0xc69a60,edge:0x936d43,hill:0xc89b5c,mountain:0xb58b58},
+  snow:{sky:0xb9d8ee,fog:0xc9e0ef,ground:0xdce8ef,floor:0xcbd9e2,path:0xb8cbd8,edge:0x8299a8,hill:0xe6f0f5,mountain:0xeaf3f7},
+  city:{sky:0x8294a9,fog:0x9aa8b5,ground:0x505762,floor:0x626a73,path:0x77736d,edge:0x373f49,hill:0x59616b,mountain:0x59616b}
+ };
+ const p=palettes[biome];
+ scene.background.setHex(p.sky);scene.fog.color.setHex(p.fog);
+ ground.material.color.setHex(p.ground);forestFloor.material.color.setHex(p.floor);path.material.color.setHex(p.path);pathEdgeMat.color.setHex(p.edge);
+ foothills.forEach(h=>{h.material.color.setHex(p.hill);h.visible=biome!=='city';});
+ mountainPeaks.forEach(m=>{m.visible=biome!=='city';m.material.color.setHex(biome==='snow'?0xf1f6fa:p.mountain);});
+ roadsideProps.forEach(o=>o.group.visible=biome==='forest');
+ Object.entries(biomeProps).forEach(([key,items])=>items.forEach(o=>o.group.visible=key===biome));
+ citySkyline.forEach(o=>o.visible=biome==='city');
+ laneDashes.forEach(d=>d.children.forEach(c=>c.material.color.setHex(biome==='snow'?0xeaf4fa:biome==='desert'?0x9d7b42:biome==='city'?0xb2bdc8:0x2c8248)));
+}
+applyBiome(0);
 // Open sky and soft clouds above the mountain ridge.
 const overhead=[];
 const clouds=[];
@@ -359,6 +419,18 @@ const gunBody=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.62),hunterDark);rifl
 const gunBarrel=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.9,10),hunterDark);gunBarrel.rotation.x=Math.PI/2;gunBarrel.position.z=.68;rifle.add(gunBarrel);
 const gunSight=new THREE.Mesh(new THREE.BoxGeometry(.08,.09,.16),mat(0x111111));gunSight.position.set(0,.12,.2);rifle.add(gunSight);
 const muzzleFlash=new THREE.Mesh(new THREE.ConeGeometry(.17,.42,8),mat(0xffc13b));muzzleFlash.rotation.x=-Math.PI/2;muzzleFlash.position.z=1.18;muzzleFlash.visible=false;rifle.add(muzzleFlash);
+// Hunter POV: red sight beam and ground reticle identify the lane under aim.
+const hunterSightMat=new THREE.LineBasicMaterial({color:0xff2020,transparent:true,opacity:.98,depthTest:false});
+const hunterSightGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+const hunterSight=new THREE.Line(hunterSightGeo,hunterSightMat);hunterSight.renderOrder=20;hunterSight.visible=false;scene.add(hunterSight);
+const hunterReticle=new THREE.Mesh(new THREE.TorusGeometry(.48,.055,8,32),new THREE.MeshBasicMaterial({color:0xff2020,transparent:true,opacity:.98,depthTest:false}));
+hunterReticle.rotation.x=-Math.PI/2;hunterReticle.position.y=.13;hunterReticle.renderOrder=21;hunterReticle.visible=false;scene.add(hunterReticle);
+function updateHunterSight(){
+ const muzzle=rifle.localToWorld(new THREE.Vector3(0,0,1.2));
+ const target=new THREE.Vector3([-1.5,0,1.5][hunterTargetLane],.12,2.25);
+ hunterSight.geometry.setFromPoints([muzzle,target]);
+ hunterReticle.position.x=target.x;hunterReticle.position.z=target.z;
+}
 hunter.visible=false;
 // track decoration pool
 let moving=[];
@@ -588,14 +660,83 @@ document.getElementById('settingsClose').addEventListener('click',()=>{
  document.getElementById('settingsModal').style.display='none';
  if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
 });
-document.getElementById('pauseGameButton').addEventListener('click',()=>{if(!running)return;running=false;document.getElementById('pauseOverlay').style.display='flex';});
-document.getElementById('resumeGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';running=true;last=performance.now();});
+document.getElementById('pauseGameButton').addEventListener('click',()=>{if(!running)return;running=false;stopPaathuMusic();document.getElementById('pauseOverlay').style.display='flex';});
+document.getElementById('resumeGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';running=true;startPaathuMusic();last=performance.now();});
 document.getElementById('quitGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';crash();});
+
+// Lightweight synthesized sound effects; no external audio files or network requests.
+let paathuAudio=null;
+function unlockPaathuAudio(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return;
+  if(!paathuAudio)paathuAudio=new AC();
+  if(paathuAudio.state==='suspended')paathuAudio.resume();
+ }catch(_){}
+}
+addEventListener('pointerdown',unlockPaathuAudio,{passive:true});
+function playPaathuSfx(kind){
+ try{
+  unlockPaathuAudio();
+  if(!paathuAudio||paathuAudio.state!=='running')return;
+  const ctx=paathuAudio,now=ctx.currentTime;
+  const tone=(freq,endFreq,duration,wave='sine',volume=.07,delay=0)=>{
+   const o=ctx.createOscillator(),g=ctx.createGain();
+   o.type=wave;o.frequency.setValueAtTime(freq,now+delay);
+   if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(35,endFreq),now+delay+duration);
+   g.gain.setValueAtTime(.0001,now+delay);
+   g.gain.exponentialRampToValueAtTime(volume,now+delay+.012);
+   g.gain.exponentialRampToValueAtTime(.0001,now+delay+duration);
+   o.connect(g);g.connect(ctx.destination);o.start(now+delay);o.stop(now+delay+duration+.02);
+  };
+  if(kind==='coin'){tone(680,1040,.14,'sine',.13);tone(1050,1550,.22,'sine',.11,.09);}
+  else if(kind==='jump'){tone(230,470,.16,'triangle',.045);}
+  else if(kind==='warning'){tone(880,650,.19,'square',.085);tone(880,650,.19,'square',.085,.27);}
+  else if(kind==='shot'){
+   const n=Math.floor(ctx.sampleRate*.16),buf=ctx.createBuffer(1,n,ctx.sampleRate),data=buf.getChannelData(0);
+   for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);
+   const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
+   src.buffer=buf;filter.type='lowpass';filter.frequency.value=1500;
+   gain.gain.setValueAtTime(.32,now);gain.gain.exponentialRampToValueAtTime(.0001,now+.19);
+   src.connect(filter);filter.connect(gain);gain.connect(ctx.destination);src.start(now);
+   tone(115,48,.22,'sawtooth',.16);
+  }else if(kind==='goat'){
+   tone(520,310,.24,'sawtooth',.12);tone(340,210,.32,'triangle',.13,.18);tone(250,170,.24,'sawtooth',.08,.42);
+  }else if(kind==='crash'){tone(105,42,.28,'sawtooth',.14);}
+ }catch(_){}
+}
+let paathuMusicTimer=null,paathuMusicNodes=[];
+function startPaathuMusic(){
+ unlockPaathuAudio();
+ if(!paathuAudio)return;
+ const begin=()=>{
+  if(paathuMusicTimer!==null)return;
+  const ctx=paathuAudio;
+  [110,164.81].forEach((f,i)=>{
+   const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;
+   g.gain.value=i?.012:.018;o.connect(g);g.connect(ctx.destination);o.start();paathuMusicNodes.push(o);
+  });
+  const notes=[261.63,293.66,329.63,392,329.63,293.66,220,261.63];let step=0;
+  paathuMusicTimer=setInterval(()=>{
+   if(!paathuAudio||paathuAudio.state!=='running')return;
+   const t=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+   o.type='triangle';o.frequency.setValueAtTime(notes[step++%notes.length],t);
+   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.035,t+.035);g.gain.exponentialRampToValueAtTime(.0001,t+.48);
+   o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+.5);
+  },520);
+ };
+ if(paathuAudio.state==='suspended')paathuAudio.resume().then(begin).catch(()=>{});else begin();
+}
+function stopPaathuMusic(){
+ if(paathuMusicTimer!==null){clearInterval(paathuMusicTimer);paathuMusicTimer=null;}
+ paathuMusicNodes.forEach(o=>{try{o.stop();}catch(_){}});paathuMusicNodes=[];
+}
+
 function move(d){
  if(!running)return;
  if(d==='left'){const old=lane;lane=Math.max(0,lane-1);if(lane!==old)laneLean=-1;}
  if(d==='right'){const old=lane;lane=Math.min(2,lane+1);if(lane!==old)laneLean=1;}
- if(d==='jump'&&jumpY<.05&&sliding<=0)jumpV=8.7;
+ if(d==='jump'&&jumpY<.05&&sliding<=0){jumpV=8.7;playPaathuSfx('jump');}
  if(d==='slide'&&jumpY<.15)sliding=.72;
 }
 applyGoatColour();refreshShop();renderSettings();
@@ -604,7 +745,7 @@ document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('pointerd
 let sx=0,sy=0;renderer.domElement.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
 renderer.domElement.addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<22)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy<0?'jump':'slide')});
 addEventListener('keydown',e=>{if(['ArrowLeft','a','ArrowRight','d','ArrowUp','w',' ','ArrowDown','s'].includes(e.key)){e.preventDefault();move(({ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'jump',w:'jump',' ':'jump',ArrowDown:'slide',s:'slide'})[e.key])}});
-function reset(){document.getElementById('pauseOverlay').style.display='none';document.getElementById('hunterWarning').style.display='none';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
+function reset(){document.getElementById('pauseOverlay').style.display='none';document.getElementById('hunterWarning').style.display='none';document.getElementById('hunterWarning').textContent='▲ HUNTER AIMING — SWITCH LANE!';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
  overhead.forEach(item=>{item.group.position.z=item.initialZ;});
  trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
 let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
@@ -645,24 +786,25 @@ function start(){
  }
  requestAnimationFrame(reveal);
 }
-document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='none';last=performance.now();});
-document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
+document.getElementById('storySkip').addEventListener('click',()=>{unlockPaathuAudio();startPaathuMusic();document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='none';last=performance.now();});
+document.getElementById('startGameButton').addEventListener('click',()=>{unlockPaathuAudio();startPaathuMusic();if(!running)start()});
 /* Leaderboard button is wired by the account controller below. */
 document.getElementById('titleSettingsButton').addEventListener('click',()=>{renderSettings();document.getElementById('settingsModal').style.display='flex';});
 
-function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.classList.remove('story');title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
+function crash(){playPaathuSfx('goat');playPaathuSfx('crash');stopPaathuMusic();running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.classList.remove('story');title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
 function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
  if(running){
  // Road markings and scenery stream toward the goat to sell forward motion.
  for(const dash of laneDashes){dash.position.z+=speed*dt;if(dash.position.z>8)dash.position.z-=115;}
  for(const sleeper of trackScroll){sleeper.position.z+=speed*dt;if(sleeper.position.z>8)sleeper.position.z-=127;}
  for(const item of roadsideProps){item.group.position.z+=speed*dt;if(item.group.position.z>13)item.group.position.z-=120;}
+ for(const items of Object.values(biomeProps))for(const item of items){item.group.position.z+=speed*dt;if(item.group.position.z>13)item.group.position.z-=120;}
  for(const item of overhead){item.group.position.z+=speed*dt;if(item.group.position.z>12)item.group.position.z-=128;}
  for(const cloud of clouds){cloud.position.x+=Math.sin(t*.00025+cloud.position.z)*dt*.08;}
  tail.rotation.x=Math.sin(t*.018)*.28;
  // Hunter chase lasts roughly 10 seconds. A flashing warning gives time to change lanes before each shot.
  if(hunterPhase==='hidden'){
-   hunter.visible=false;hunterCooldown-=dt;
+   hunterSight.visible=false;hunterReticle.visible=false;hunter.visible=false;hunterCooldown-=dt;
    if(hunterCooldown<=0){hunterPhase='enter';hunterPhaseTime=0;hunter.visible=true;hunter.position.set(goat.position.x*.5,0,12.5);hunterShots=0;hunterTargetLane=lane;}
  }else{
    hunterPhaseTime+=dt;hunter.visible=true;
@@ -670,14 +812,15 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
    hunter.rotation.z=Math.sin(t*.014)*.045;
    if(hunterPhase==='enter'){
      hunter.position.z=THREE.MathUtils.damp(hunter.position.z,7.0,2.2,dt);
-     if(hunterPhaseTime>2){hunterPhase='warning';hunterPhaseTime=0;}
+     if(hunterPhaseTime>2){hunterPhase='warning';hunterPhaseTime=0;document.getElementById('hunterWarning').textContent=(lane===hunterTargetLane?'⚠ HUNTER AIMING AT YOUR LANE — MOVE NOW!':'⚠ HUNTER AIMING — STAY ALERT!');playPaathuSfx('warning');}
    }else if(hunterPhase==='warning'){
      hunter.position.z=7.0;document.getElementById('hunterWarning').style.display='block';
-     if(hunterPhaseTime>1.25){document.getElementById('hunterWarning').style.display='none';muzzleFlash.visible=true;setTimeout(()=>{muzzleFlash.visible=false},180);if(lane===hunterTargetLane)crash();hunterPhase='aftershot';hunterPhaseTime=0;}
+     hunterSight.visible=true;hunterReticle.visible=true;updateHunterSight();
+     if(hunterPhaseTime>2.0){document.getElementById('hunterWarning').style.display='none';muzzleFlash.visible=true;playPaathuSfx('shot');setTimeout(()=>{muzzleFlash.visible=false},180);if(lane===hunterTargetLane)crash();hunterPhase='aftershot';hunterPhaseTime=0;}
    }else if(hunterPhase==='aftershot'){
-     hunter.position.z=7.0; if(hunterPhaseTime>1.4){hunterShots++;if(hunterShots>=3){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
+     hunterSight.visible=false;hunterReticle.visible=false;hunter.position.z=7.0; if(hunterPhaseTime>1.4){hunterShots++;if(hunterShots>=3){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
    }else if(hunterPhase==='exit'){
-     document.getElementById('hunterWarning').style.display='none';hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
+     hunterSight.visible=false;hunterReticle.visible=false;document.getElementById('hunterWarning').style.display='none';hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
      if(hunterPhaseTime>2){hunterPhase='hidden';hunter.visible=false;hunterCooldown=15+Math.random()*8;}
    }
  }
@@ -694,7 +837,8 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  }
  score+=dt*speed*.65;
  // Difficulty rises in clear 500m stages rather than accelerating constantly.
- const stage=Math.floor(score/250);
+ const stage=Math.floor(score/1000);
+ applyBiome(stage);
  speed=Math.min(32,15+stage*1.15);
  scoreEl.textContent=Math.floor(score);
  goat.position.x=THREE.MathUtils.damp(goat.position.x,[-1.5,0,1.5][lane],16,dt);
@@ -726,6 +870,7 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
      if(sameLane){
        o.userData.hit=true;
        coins++;
+       playPaathuSfx('coin');
        saveProgress();
        refreshShop();
        scene.remove(o);
