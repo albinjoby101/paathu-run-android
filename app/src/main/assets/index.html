@@ -715,25 +715,40 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  if(spawn<=0){let l=Math.floor(Math.random()*3),types=['rock','rock','log','crate','branch','stump','fallen_branch','mushrooms','boulder','roots','giant_boulder','fallen_tree','thorn_wall'];addObstacle(l,-75,types[Math.floor(Math.random()*types.length)]);spawn=Math.max(.92,1.48-(speed-15)*.025)}
  if(Math.random()<dt*.12){let wl=Math.floor(Math.random()*3);addObstacle(wl,-82,'water')}
  if(coinSpawn<=0){const patterns=['line','zigzag','switch','short'];const pattern=patterns[Math.floor(Math.random()*patterns.length)];let l=Math.floor(Math.random()*3);const count=pattern==='short'?3:pattern==='line'?7:6;for(let i=0;i<count;i++){if(pattern==='zigzag'&&i%2)l=(l+1)%3;if(pattern==='switch'&&i===3)l=(l+1+Math.floor(Math.random()*2))%3;addCoin(l,-48-i*2.15);}coinSpawn=1.7+Math.random()*1.7}
- for(let i=moving.length-1;i>=0;i--){let o=moving[i];o.position.z+=speed*dt;if(o.userData.type==='coin')o.rotation.y+=dt*3;
- if(o.userData.type==='coin'&&!o.userData.hit&&o.position.z>=1.9&&o.position.z<=4.1){
-   const same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.72;
-   if(same){
-     o.userData.hit=true;coins++;saveProgress();refreshShop();
-     scene.remove(o);moving.splice(i,1);continue;
+ for(let i=moving.length-1;i>=0;i--){
+   const o=moving[i];
+   o.position.z+=speed*dt;
+   if(o.userData.type==='coin')o.rotation.y+=dt*3;
+
+   // Pick up coins inside the goat's collection zone and remove them immediately.
+   if(o.userData.type==='coin'&&!o.userData.hit&&o.position.z>=1.65&&o.position.z<=4.45){
+     const sameLane=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.78;
+     if(sameLane){
+       o.userData.hit=true;
+       coins++;
+       saveProgress();
+       refreshShop();
+       scene.remove(o);
+       moving.splice(i,1);
+       continue;
+     }
    }
- }
- if(o.userData.type!=='coin'&&o.userData.type!=='water'&&!o.userData.hit&&o.position.z>=2.0&&o.position.z<=4.0){
-   o.userData.hit=true;
-   const same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.72;
-   if(same){
-     const jumpHeights={rock:.62,log:.78,stump:.82,fallen_branch:.52,mushrooms:.42,roots:.42};
-     const laneChangeOnly=['crate','boulder','giant_boulder','fallen_tree','thorn_wall','train'].includes(o.userData.type);
-     const safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:(jumpHeights[o.userData.type]!==undefined&&jumpY>jumpHeights[o.userData.type]));
-     if(!safe)crash();
+
+   // Evaluate each obstacle once, while it overlaps the goat's position.
+   if(o.userData.type!=='coin'&&o.userData.type!=='water'&&!o.userData.hit&&o.position.z>=1.65&&o.position.z<=4.45){
+     o.userData.hit=true;
+     const sameLane=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.78;
+     if(sameLane){
+       const jumpClearance={rock:.38,log:.62,stump:.48,fallen_branch:.30,mushrooms:.22,roots:.24};
+       const mustChangeLane=['crate','boulder','giant_boulder','fallen_tree','thorn_wall','train'];
+       const safe=o.userData.type==='branch'
+         ? sliding>.05
+         : (jumpClearance[o.userData.type]!==undefined&&jumpY>jumpClearance[o.userData.type]);
+       if(mustChangeLane.includes(o.userData.type)||!safe)crash();
+     }
    }
+   if(o.position.z>9){scene.remove(o);moving.splice(i,1);}
  }
- if(o.position.z>9){scene.remove(o);moving.splice(i,1)}}
  }
  renderer.render(scene,camera);
 }
@@ -790,21 +805,11 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
    catch(e){message(e.message);}finally{btn.disabled=false;}
  });
  el('paathuLogin').addEventListener('click',async()=>{
-   const email=el('paathuEmail').value.trim().toLowerCase(),password=el('paathuPassword').value;
-   if(!email||!password){message('Enter your email address and password.');return;}
-   const btn=el('paathuLogin');btn.disabled=true;message('Connecting securely to your account...');
-   try{
-     const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
-     if(!data||!data.access_token||!data.refresh_token)throw new Error('Login response was incomplete. Please try again.');
-     saveSession(data);localStorage.setItem('paathuRunMode','account');
-     message('Login successful. Welcome back!');
-   }catch(e){
-     const raw=String(e.message||e);
-     if(/invalid login credentials/i.test(raw))message('Email or password is incorrect. Your account has not been deleted.');
-     else if(/email not confirmed/i.test(raw))message('Please confirm your email using the link sent by Supabase, then log in again.');
-     else if(/failed to fetch|network|load failed/i.test(raw))message('Could not reach the login server. Check your internet connection and try again.');
-     else message('Login failed: '+raw);
-   }finally{btn.disabled=false;}
+   const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
+   if(!email||!password){message('Enter your email and password.');return;}
+   const btn=el('paathuLogin');btn.disabled=true;message('Logging in...');
+   try{const data=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});saveSession(data);localStorage.setItem('paathuRunMode','account');message('Welcome back!');}
+   catch(e){message(e.message);}finally{btn.disabled=false;}
  });
  el('paathuLogout').addEventListener('click',async()=>{try{if(session?.access_token)await api('/auth/v1/logout',{method:'POST',token:session.access_token});}catch(e){message(e.message);return;}saveSession(null);message('Logged out. Your local game progress remains on this device.');});
  async function loadLeaderboard(){
@@ -822,7 +827,7 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
    if(!currentUser||!session?.access_token||!Number.isFinite(distance)||distance<0)return;
    try{const prior=await api('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1',{token:session.access_token});const best=Math.max(Math.floor(distance),Number(prior[0]?.best_distance)||0);if(best<=(Number(prior[0]?.best_distance)||0))return;await api('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',token:session.access_token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});}catch(e){console.warn('Best run upload failed',e);}
  }};
- refreshAccount().catch(e=>{console.warn('Initial account check failed',e);message('Account check failed. You can still choose guest mode or retry login.');});
+ refreshAccount();
 })();
 </script>
 </body>
