@@ -719,162 +719,90 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
 requestAnimationFrame(animate);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const db = createClient(
- 'https://pthtqtfsmnfiduhgigfa.supabase.co',
- 'sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx'
-);
-
-const el = id => document.getElementById(id);
-let currentUser = null;
-
-function showMessage(message) {
- el('paathuMessage').textContent = message;
-}
-
-function updateAccount() {
- const username = currentUser?.user_metadata?.username || currentUser?.email || '';
- el('paathuAccountStatus').textContent = currentUser ? 'Logged in as @' + username : 'Playing as guest';
- el('paathuLogout').style.display = currentUser ? 'block' : 'none';
- el('paathuIdentity').textContent = currentUser ? '👤 @' + username : '👤 GUEST MODE';
- window.PaathuAccount.username=currentUser?'@'+username:'GUEST'; const logo=JSON.parse(localStorage.getItem('paathuRunSave')||'{}').profileLogo||'🐐'; const hud=document.getElementById('hudPlayer'); if(hud)hud.textContent=logo+' '+window.PaathuAccount.username;
- el('paathuIdentity').style.display = 'block';
-}
-
-async function refreshAccount() {
- const {data,error} = await db.auth.getSession();
- if (error) showMessage(error.message);
- currentUser = data?.session?.user || null;
- updateAccount();
-}
-
-el('accountOpen').addEventListener('click', async () => {
- await refreshAccount();
- el('accountModal').style.display = 'flex';
- showMessage('');
-});
-
-el('paathuAccountClose').addEventListener('click', () => {
- el('accountModal').style.display = 'none';
-});
-
-el('paathuGuest').addEventListener('click', () => {
- localStorage.setItem('paathuRunMode','guest');
- el('accountModal').style.display = 'none';
- showMessage('');
-});
-
-el('paathuRegister').addEventListener('click', async () => {
- const email = el('paathuEmail').value.trim();
- const password = el('paathuPassword').value;
- const username = el('paathuUsername').value.trim();
-
- if (!email || password.length < 8 ||
-     !/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-  showMessage('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');
-  return;
+<script>
+/* PAATHU RUN account client: plain WebView-compatible REST calls.
+   Avoids JavaScript module imports from file://, which can silently fail in Android WebView. */
+(function () {
+ const PROJECT='https://pthtqtfsmnfiduhgigfa.supabase.co';
+ const API_KEY='sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx';
+ const el=id=>document.getElementById(id);
+ let currentUser=null, accessToken=null;
+ try {
+  const saved=JSON.parse(localStorage.getItem('paathuAuthSession')||'null');
+  if(saved && saved.access_token && saved.user){accessToken=saved.access_token;currentUser=saved.user;}
+ } catch(e) {}
+ function message(t){const n=el('paathuMessage');if(n)n.textContent=t;}
+ function headers(extra){return Object.assign({'apikey':API_KEY,'Content-Type':'application/json'},accessToken?{Authorization:'Bearer '+accessToken}:{Authorization:'Bearer '+API_KEY},extra||{});}
+ async function request(path,opts={}){
+  const response=await fetch(PROJECT+path,Object.assign({headers:headers()},opts));
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(body.msg||body.message||body.error_description||body.error||('Request failed ('+response.status+')'));
+  return body;
  }
-
- showMessage('Creating account...');
-
- const {data,error} = await db.auth.signUp({
-  email,
-  password,
-  options:{data:{username},emailRedirectTo:'https://pthtqtfsmnfiduhgigfa.supabase.co'}
+ function saveSession(data){
+  accessToken=data.access_token||null;currentUser=data.user||null;
+  if(accessToken&&currentUser)localStorage.setItem('paathuAuthSession',JSON.stringify(data));
+  else localStorage.removeItem('paathuAuthSession');
+  updateAccount();
+ }
+ function updateAccount(){
+  const username=currentUser?.user_metadata?.username||currentUser?.email||'';
+  if(el('paathuAccountStatus'))el('paathuAccountStatus').textContent=currentUser?'Logged in as @'+username:'Playing as guest';
+  if(el('paathuLogout'))el('paathuLogout').style.display=currentUser?'block':'none';
+  if(el('paathuIdentity')){el('paathuIdentity').textContent=currentUser?'👤 @'+username:'👤 GUEST MODE';el('paathuIdentity').style.display='block';}
+  window.PaathuAccount.username=currentUser?'@'+username:'GUEST';
+  try{const logo=JSON.parse(localStorage.getItem('paathuRunSave')||'{}').profileLogo||'🐐';if(el('hudPlayer'))el('hudPlayer').textContent=logo+' '+window.PaathuAccount.username;}catch(e){}
+ }
+ async function refreshAccount(){
+  if(!accessToken){updateAccount();return;}
+  try{const d=await request('/auth/v1/user',{headers:headers()});currentUser=d;updateAccount();}
+  catch(e){accessToken=null;currentUser=null;localStorage.removeItem('paathuAuthSession');updateAccount();}
+ }
+ el('accountOpen').addEventListener('click',async()=>{el('accountModal').style.display='flex';message('');await refreshAccount();});
+ el('paathuAccountClose').addEventListener('click',()=>{el('accountModal').style.display='none';});
+ el('paathuGuest').addEventListener('click',()=>{localStorage.setItem('paathuRunMode','guest');el('accountModal').style.display='none';message('');});
+ el('paathuRegister').addEventListener('click',async()=>{
+  const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value,username=el('paathuUsername').value.trim();
+  if(!email||password.length<8||!/^[a-zA-Z0-9_]{3,20}$/.test(username)){message('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');return;}
+  const b=el('paathuRegister');b.disabled=true;message('Creating account…');
+  try{const d=await request('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password,data:{username}})});
+   if(d.access_token)saveSession(d);message(d.access_token?'Account created and logged in!':'Account created. Check your email to confirm, then log in.');
+  }catch(e){message('Sign-up failed: '+e.message);}finally{b.disabled=false;}
  });
-
- if (error) {
-  showMessage(error.message);
-  return;
+ el('paathuLogin').addEventListener('click',async()=>{
+  const email=el('paathuEmail').value.trim(),password=el('paathuPassword').value;
+  if(!email||!password){message('Enter your email and password.');return;}
+  const b=el('paathuLogin');b.disabled=true;message('Logging in…');
+  try{const d=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+   saveSession(d);localStorage.setItem('paathuRunMode','account');message('Welcome back, '+(d.user?.user_metadata?.username||email)+'!');
+  }catch(e){message('Login failed: '+e.message);}finally{b.disabled=false;}
+ });
+ el('paathuLogout').addEventListener('click',async()=>{
+  try{if(accessToken)await request('/auth/v1/logout',{method:'POST'});}catch(e){}
+  accessToken=null;currentUser=null;localStorage.removeItem('paathuAuthSession');updateAccount();message('Logged out. Guest progress remains on this device.');
+ });
+ async function loadPaathuLeaderboard(){
+  const target=el('paathuLeaderboard');target.textContent='Loading rankings…';
+  try{
+   const data=await request('/rest/v1/global_leaderboard?select=rank,username,best_distance&order=rank.asc&limit=100');
+   target.replaceChildren();
+   if(!data.length){target.textContent='No players yet. Be the first to set a record!';return;}
+   data.forEach(p=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+p.rank+'  @'+p.username+' — '+p.best_distance+' m';target.appendChild(row);});
+   if(currentUser){const mine=await request('/rest/v1/global_leaderboard?select=rank,username,best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';own.textContent=mine.length?'YOUR POSITION: #'+mine[0].rank+' — '+mine[0].best_distance+' m':'You have no submitted run yet.';target.appendChild(own);}
+  }catch(e){target.textContent='Leaderboard error: '+e.message;}
  }
-
- currentUser = data.session ? data.user : null;
- updateAccount();
-
- showMessage(data.session
-  ? 'Account created! You are logged in.'
-  : 'Account created! Check your email to confirm, then log in.');
-});
-
-el('paathuLogin').addEventListener('click', async () => {
- const email = el('paathuEmail').value.trim();
- const password = el('paathuPassword').value;
-
- if (!email || !password) {
-  showMessage('Enter your email and password.');
-  return;
- }
-
- showMessage('Logging in...');
-
- const {data,error} = await db.auth.signInWithPassword({email,password});
-
- if (error) {
-  showMessage(error.message);
-  return;
- }
-
- currentUser = data.user;
- localStorage.setItem('paathuRunMode','account');
- updateAccount();
- showMessage('Welcome back!');
-});
-
-el('paathuLogout').addEventListener('click', async () => {
- const {error} = await db.auth.signOut();
-
- if (error) {
-  showMessage(error.message);
-  return;
- }
-
- currentUser = null;
- updateAccount();
- showMessage('Logged out. Your local game progress remains on this device.');
-});
-
-async function loadPaathuLeaderboard() {
- const target = el('paathuLeaderboard');
- target.textContent = 'Loading rankings...';
- const {data,error} = await db.from('global_leaderboard').select('rank,username,best_distance').order('rank',{ascending:true}).limit(100);
- target.replaceChildren();
- if(error){target.textContent='Leaderboard error: '+error.message;return;}
- if(!data?.length){target.textContent='No players yet. Be the first to set a record!';return;}
- data.forEach(player=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+player.rank+'  @'+player.username+' — '+player.best_distance+' m';target.appendChild(row);});
- if(currentUser){
-  const {data:mine,error:mineError}=await db.from('global_leaderboard').select('rank,username,best_distance').eq('user_id',currentUser.id).maybeSingle();
-  const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';
-  own.textContent=mine?`YOUR POSITION: #${mine.rank} — ${mine.best_distance} m`:(mineError?'Your rank unavailable':'You have no submitted run yet.');target.appendChild(own);
- }
-}
-el('leaderboardOpen').addEventListener('click', async () => {
- el('leaderboardModal').style.display='flex'; await loadPaathuLeaderboard();
-});
-
-el('paathuLeaderboardClose').addEventListener('click', () => {
- el('leaderboardModal').style.display = 'none';
-});
-
-window.PaathuAccount = {username:'GUEST',
- async submitBestRun(distance) {
-  if(!currentUser || !Number.isFinite(distance) || distance<0) return;
-  const {data:existing,error:readError}=await db.from('best_runs').select('best_distance').eq('user_id',currentUser.id).maybeSingle();
-  if(readError){console.warn('Could not read previous best run',readError);return;}
-  const best=Math.max(Math.floor(distance),Number(existing?.best_distance)||0);
-  if(best <= (Number(existing?.best_distance)||0)) return;
-  const {error}=await db.from('best_runs').upsert({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()},{onConflict:'user_id'});
-  if(error) console.warn('Best run upload failed',error); else console.info('Best run submitted',best);
- }
-};
-
-db.auth.onAuthStateChange((_event,session) => {
- currentUser = session?.user || null;
- updateAccount();
-});
-
-refreshAccount();
+ el('leaderboardOpen').addEventListener('click',async()=>{el('leaderboardModal').style.display='flex';await loadPaathuLeaderboard();});
+ el('paathuLeaderboardClose').addEventListener('click',()=>{el('leaderboardModal').style.display='none';});
+ window.PaathuAccount={username:'GUEST',async submitBestRun(distance){
+  if(!currentUser||!accessToken||!Number.isFinite(distance)||distance<0)return;
+  try{
+   const old=await request('/rest/v1/best_runs?select=best_distance&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');
+   const best=Math.max(Math.floor(distance),Number(old[0]?.best_distance)||0);if(best<=(Number(old[0]?.best_distance)||0))return;
+   await request('/rest/v1/best_runs?on_conflict=user_id',{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()})});
+  }catch(e){console.warn('Best run upload failed',e);}
+ }};
+ updateAccount();refreshAccount();
+})();
 </script>
 </body>
 </html>
