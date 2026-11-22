@@ -16,6 +16,10 @@ h1{font-size:clamp(46px,13vw,76px);line-height:1;margin:0;color:#fff36b;letter-s
 button{border:0;border-radius:16px;background:#a9e85e;color:#14200d;font-weight:900;font-size:18px;padding:14px 24px;box-shadow:0 5px 0 #5d9632}
 button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 #help{display:none}
+#title .menu-actions{display:grid;gap:12px;width:min(82vw,300px);margin:22px auto 0}
+#title .menu-actions button{width:100%;font-size:17px}
+#title .menu-actions .menu-alt{background:#183b30;color:#fff2a1;box-shadow:0 5px 0 #10251d;border:1px solid #b7e58a}
+#paathuIdentity{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:25;display:none;background:#183b30dd;border:1px solid #b7e58a;border-radius:14px;padding:8px 11px;font-size:12px;font-weight:800;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #controls{display:none!important;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
 .pad{display:flex;gap:8px;pointer-events:auto}
 .pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
@@ -93,8 +97,14 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 <div id="title"><div class="panel">
   <div style="font-size:clamp(76px,20vw,112px);filter:drop-shadow(0 8px 8px #44205b66)">🐐</div>
   <h1>PAATHU RUN</h1>
-  <div class="sub" id="titleSub">TAP TO PLAY</div>
+  <div class="sub" id="titleSub">ENDLESS FOREST RUN</div>
+  <div class="menu-actions">
+   <button id="startGameButton">▶ PRESS START</button>
+   <button id="titleLeaderboardButton" class="menu-alt">🏆 GLOBAL LEADERBOARD</button>
+   <button id="titleSettingsButton" class="menu-alt">⚙️ SETTINGS</button>
+  </div>
 </div></div>
+<div id="paathuIdentity">GUEST MODE</div>
 <button id="shopOpen" aria-label="Open shop">🎅 SHOP</button>
 <button id="settingsOpen" aria-label="Open settings">⚙️ SETTINGS</button>
 <div id="shopModal">
@@ -112,6 +122,7 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
   <div class="shopBalance">Choose Paathu's colour</div>
   <div id="colourGrid" class="colourGrid"></div>
   <div id="goldColourAction"></div>
+  <button id="settingsAccountButton" class="shopClose">👤 ACCOUNT / LOGIN</button>
   <button id="settingsClose" class="shopClose">CLOSE</button>
  </div>
 </div>
@@ -547,6 +558,7 @@ document.getElementById('settingsOpen').addEventListener('click',()=>{
  if(running)running=false;
  renderSettings();document.getElementById('settingsModal').style.display='flex';
 });
+document.getElementById('settingsAccountButton').addEventListener('click',()=>document.getElementById('accountOpen').click());
 document.getElementById('settingsClose').addEventListener('click',()=>{
  document.getElementById('settingsModal').style.display='none';
  if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
@@ -605,9 +617,11 @@ function start(){
  }
  requestAnimationFrame(reveal);
 }
-title.addEventListener('pointerdown',()=>{if(!running)start()});
+document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
+document.getElementById('titleLeaderboardButton').addEventListener('click',()=>document.getElementById('leaderboardOpen').click());
+document.getElementById('titleSettingsButton').addEventListener('click',()=>document.getElementById('settingsOpen').click());
 
-function crash(){running=false;ended=true;document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins  •  TAP TO PLAY`;}
+function crash(){running=false;ended=true;document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
 function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
  if(running){
  // Road markings and scenery stream toward the goat to sell forward motion.
@@ -698,10 +712,11 @@ function showMessage(message) {
 }
 
 function updateAccount() {
- el('paathuAccountStatus').textContent = currentUser
-  ? 'Logged in: ' + (currentUser.user_metadata?.username || currentUser.email)
-  : 'Playing as guest';
+ const username = currentUser?.user_metadata?.username || currentUser?.email || '';
+ el('paathuAccountStatus').textContent = currentUser ? 'Logged in as @' + username : 'Playing as guest';
  el('paathuLogout').style.display = currentUser ? 'block' : 'none';
+ el('paathuIdentity').textContent = currentUser ? '👤 @' + username : '👤 GUEST MODE';
+ el('paathuIdentity').style.display = 'block';
 }
 
 async function refreshAccount() {
@@ -743,7 +758,7 @@ el('paathuRegister').addEventListener('click', async () => {
  const {data,error} = await db.auth.signUp({
   email,
   password,
-  options:{data:{username}}
+  options:{data:{username},emailRedirectTo:'https://pthtqtfsmnfiduhgigfa.supabase.co'}
  });
 
  if (error) {
@@ -796,41 +811,39 @@ el('paathuLogout').addEventListener('click', async () => {
  showMessage('Logged out. Your local game progress remains on this device.');
 });
 
-el('leaderboardOpen').addEventListener('click', async () => {
- el('leaderboardModal').style.display = 'flex';
+async function loadPaathuLeaderboard() {
  const target = el('paathuLeaderboard');
  target.textContent = 'Loading rankings...';
-
- const {data,error} = await db
-  .from('global_leaderboard')
-  .select('rank,username,best_distance')
-  .order('rank',{ascending:true})
-  .limit(50);
-
+ const {data,error} = await db.from('global_leaderboard').select('rank,username,best_distance').order('rank',{ascending:true}).limit(100);
  target.replaceChildren();
-
- if (error) {
-  target.textContent = 'Could not load rankings: ' + error.message;
-  return;
+ if(error){target.textContent='Leaderboard error: '+error.message;return;}
+ if(!data?.length){target.textContent='No players yet. Be the first to set a record!';return;}
+ data.forEach(player=>{const row=document.createElement('div');row.className='paathu-rank';row.textContent='#'+player.rank+'  @'+player.username+' — '+player.best_distance+' m';target.appendChild(row);});
+ if(currentUser){
+  const {data:mine,error:mineError}=await db.from('global_leaderboard').select('rank,username,best_distance').eq('user_id',currentUser.id).maybeSingle();
+  const own=document.createElement('div');own.className='paathu-rank';own.style.border='2px solid #fff36b';own.style.marginTop='12px';
+  own.textContent=mine?`YOUR POSITION: #${mine.rank} — ${mine.best_distance} m`:(mineError?'Your rank unavailable':'You have no submitted run yet.');target.appendChild(own);
  }
-
- if (!data?.length) {
-  target.textContent = 'No players yet. Be the first to set a record!';
-  return;
- }
-
- data.forEach(player => {
-  const row = document.createElement('div');
-  row.className = 'paathu-rank';
-  row.textContent = '#' + player.rank + '  ' +
-   player.username + ' — ' + player.best_distance + ' m';
-  target.appendChild(row);
- });
+}
+el('leaderboardOpen').addEventListener('click', async () => {
+ el('leaderboardModal').style.display='flex'; await loadPaathuLeaderboard();
 });
 
 el('paathuLeaderboardClose').addEventListener('click', () => {
  el('leaderboardModal').style.display = 'none';
 });
+
+window.PaathuAccount = {
+ async submitBestRun(distance) {
+  if(!currentUser || !Number.isFinite(distance) || distance<0) return;
+  const {data:existing,error:readError}=await db.from('best_runs').select('best_distance').eq('user_id',currentUser.id).maybeSingle();
+  if(readError){console.warn('Could not read previous best run',readError);return;}
+  const best=Math.max(Math.floor(distance),Number(existing?.best_distance)||0);
+  if(best <= (Number(existing?.best_distance)||0)) return;
+  const {error}=await db.from('best_runs').upsert({user_id:currentUser.id,best_distance:best,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+  if(error) console.warn('Best run upload failed',error); else console.info('Best run submitted',best);
+ }
+};
 
 db.auth.onAuthStateChange((_event,session) => {
  currentUser = session?.user || null;
