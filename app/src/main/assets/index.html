@@ -7,26 +7,7 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#8ed8f2;font-family:system-ui,Arial;color:white;touch-action:none}
 #game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
-#hud{display:none;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;z-index:24;align-items:center;justify-content:space-between;gap:7px;padding:0 10px;pointer-events:none;text-shadow:0 2px 5px #000}
-#hud .pill{font-size:clamp(11px,3vw,14px);padding:7px 9px;white-space:nowrap}
-#hudPlayer{max-width:36vw;overflow:hidden;text-overflow:ellipsis}
-#pauseGameButton{pointer-events:auto;padding:7px 11px;font-size:14px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:0 3px 0 #10251d}
-#pauseOverlay{display:none;position:fixed;inset:0;z-index:60;background:#06150fc9;align-items:center;justify-content:center;padding:24px;text-align:center}
-#pauseOverlay .pause-card{width:min(90vw,340px);padding:26px 20px;border-radius:22px;background:#183b30;border:2px solid #b7e58a}
-#pauseOverlay button{width:100%;margin-top:12px}
-#storySkip{display:none;margin:20px auto 0;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:0 4px 0 #10251d}
-#title.story-mode .panel>div:first-child,#title.story-mode .menu-actions{display:none}
-#title.story-mode #storySkip{display:block}
-#paathuIdentity,#settingsOpen,#accountOpen,#leaderboardOpen,#shopOpen{display:none!important}
-#hunterWarning{display:none;position:fixed;z-index:55;top:19%;left:50%;transform:translateX(-50%);padding:10px 18px;border:3px solid #ffdf4d;border-radius:14px;background:#8e1717e8;color:#fff;font-weight:1000;font-size:22px;letter-spacing:1px;text-align:center;text-shadow:0 2px 4px #000;box-shadow:0 0 0 5px #ffdf4d44;animation:warningBlink .32s infinite alternate}
-@keyframes warningBlink{from{opacity:.45;transform:translateX(-50%) scale(.96)}to{opacity:1;transform:translateX(-50%) scale(1.04)}}
-.profileGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
-.profileChoice{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;background:#214b3d;color:#fff2a1;border:2px solid #b7e58a;border-radius:13px;font-size:14px}
-.profileChoice.selected{background:#a9e85e;color:#14200d;border-color:#fff2a1}
-.settingsActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}
-.settingsActions button{font-size:13px;padding:12px 7px}
-body.playing #paathuIdentity,body.playing #shopOpen,body.playing #settingsOpen,body.playing #accountOpen,body.playing #leaderboardOpen{display:none!important}
-body.story-intro #accountOpen,body.story-intro #leaderboardOpen,body.story-intro #paathuIdentity,body.story-intro #shopOpen,body.story-intro #settingsOpen{display:none!important}
+#hud{display:none;position:fixed;top:env(safe-area-inset-top,10px);left:0;right:0;justify-content:space-between;padding:14px 18px;pointer-events:none;text-shadow:0 2px 5px #000}
 .pill{background:#06150fc9;border:1px solid #ffffff35;border-radius:18px;padding:7px 13px;font-weight:800}
 #title{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#172b3a22,#172b3a55);text-align:center;cursor:pointer}
 .panel{width:min(92vw,440px);padding:20px 12px;background:transparent;border:0;box-shadow:none}
@@ -42,6 +23,14 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 #controls{display:none!important;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
 .pad{display:flex;gap:8px;pointer-events:auto}
 .pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
+#pauseGameButton{pointer-events:auto;padding:5px 14px;font-size:20px;border-radius:12px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:none}
+#storySkip{display:none;position:fixed;z-index:40;right:18px;bottom:calc(28px + env(safe-area-inset-bottom,0px));font-size:15px;padding:12px 18px}
+#hunterWarning{display:none;position:fixed;top:18%;left:0;right:0;text-align:center;color:#fff;background:#a51f1fcc;font-weight:1000;font-size:clamp(18px,5vw,26px);padding:12px;text-shadow:0 2px 5px #000;z-index:45;animation:warningBlink .35s infinite alternate;pointer-events:none}
+@keyframes warningBlink{from{opacity:.45;transform:scale(.98)}to{opacity:1;transform:scale(1.02)}}
+#pauseOverlay{display:none;position:fixed;inset:0;z-index:80;background:#0009;align-items:center;justify-content:center;padding:20px}
+body.playing #shopOpen,body.playing #settingsOpen,body.playing #accountOpen,body.playing #leaderboardOpen{display:none!important}
+#accountOpen,#leaderboardOpen{display:none!important}
+#settingsOpen{display:none!important}
 #toast{position:fixed;top:22%;left:0;right:0;text-align:center;font-weight:900;font-size:22px;text-shadow:0 3px 8px #000;pointer-events:none;opacity:0}
 #shopOpen{position:fixed;right:14px;top:calc(72px + env(safe-area-inset-top,0px));z-index:20;padding:9px 13px;font-size:14px;border-radius:14px;box-shadow:0 3px 0 #5d9632}
 #shopModal{display:none;position:fixed;inset:0;z-index:30;align-items:center;justify-content:center;background:#06150fc9;padding:20px}
@@ -111,15 +100,8 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 </head>
 <body>
 <div id="game"></div>
-<div id="hud">
- <div class="pill" id="hudPlayer"><span id="hudLogo">🐐</span> <span id="hudName">GUEST</span></div>
- <div class="pill">🏃 <span id="score">0</span>m</div>
- <div class="pill">🪙 <span id="coins">0</span></div>
- <button id="pauseGameButton">Ⅱ</button>
-</div>
-<div id="pauseOverlay"><div class="pause-card"><h2>PAUSED</h2><p>Take a breath, Paathu.</p><button id="resumeGameButton">▶ RESUME</button></div></div>
-<div id="toast">NICE!</div>
-<div id="hunterWarning">⚠️ HUNTER AIMING — CHANGE LANE!</div>
+<div id="hud"><div class="pill" id="hudPlayer">🐐 GUEST</div><div class="pill">🪙 <span id="coins">0</span>　🏃 <span id="score">0</span>m</div><button id="pauseGameButton" aria-label="Pause">Ⅱ</button></div>
+<div id="toast">NICE!</div><div id="hunterWarning">▲ HUNTER AIMING — SWITCH LANE!</div><button id="storySkip">SKIP STORY »</button><div id="pauseOverlay"><div class="paathu-card"><h2>PAUSED</h2><button id="resumeGame">RESUME</button><button id="quitGame">QUIT RUN</button></div></div>
 <div id="title"><div class="panel">
   <div style="font-size:clamp(76px,20vw,112px);filter:drop-shadow(0 8px 8px #44205b66)">🐐</div>
   <h1>PAATHU RUN</h1>
@@ -129,7 +111,6 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
    <button id="titleLeaderboardButton" class="menu-alt">🏆 GLOBAL LEADERBOARD</button>
    <button id="titleSettingsButton" class="menu-alt">⚙️ SETTINGS</button>
   </div>
-  <button id="storySkip">SKIP STORY ▶</button>
 </div></div>
 <div id="paathuIdentity">GUEST MODE</div>
 <button id="shopOpen" aria-label="Open shop">🎅 SHOP</button>
@@ -147,14 +128,13 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
  <div class="settingsCard">
   <h2>⚙️ PAATHU SETTINGS</h2>
   <div class="shopBalance">Choose Paathu's colour</div>
-  <div id="colourGrid" class="colourGrid"></div>
+  <div id="colourGrid" class="colourGrid"></div><div class="shopBalance">Choose your profile goat</div><div id="profileLogoGrid" class="colourGrid"></div>
   <div id="goldColourAction"></div>
   <button id="settingsAccountButton" class="shopClose">👤 ACCOUNT / LOGIN</button>
   <button id="settingsClose" class="shopClose">CLOSE</button>
  </div>
 </div>
-<button id="accountOpen" hidden>👤 ACCOUNT</button>
-<button id="leaderboardOpen" hidden>🏆 RANKINGS</button>
+
 
 <div id="accountModal" class="paathu-overlay">
  <div class="paathu-card">
@@ -366,12 +346,13 @@ for(let x of [-.17,.17]){
  const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.55,4,7),hunterCloth);arm.position.set(x*2,1.25,.04);arm.rotation.z=x<0?-.25:.25;hunter.add(arm);
 }
 const pack=new THREE.Mesh(new THREE.BoxGeometry(.55,.68,.28),hunterLeather);pack.position.set(0,1.25,-.34);hunter.add(pack);
-// Clearly visible wooden-stock rifle held across the hunter's chest.
-const gun=new THREE.Group();
-const stock=new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.62),hunterLeather);stock.position.set(.24,1.42,.42);gun.add(stock);
-const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.95,10),hunterDark);barrel.rotation.x=Math.PI/2;barrel.position.set(.24,1.52,.88);gun.add(barrel);
-const grip=new THREE.Mesh(new THREE.BoxGeometry(.12,.3,.14),hunterDark);grip.position.set(.24,1.22,.55);grip.rotation.x=-.2;gun.add(grip);
-gun.rotation.x=-.08;hunter.add(gun);
+// Clearly readable hunting rifle held across the front of the pursuer.
+const rifle=new THREE.Group();rifle.position.set(.34,1.38,.42);rifle.rotation.z=-.10;hunter.add(rifle);
+const gunStock=new THREE.Mesh(new THREE.BoxGeometry(.16,.18,.48),hunterLeather);gunStock.position.z=-.28;rifle.add(gunStock);
+const gunBody=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.62),hunterDark);rifle.add(gunBody);
+const gunBarrel=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.9,10),hunterDark);gunBarrel.rotation.x=Math.PI/2;gunBarrel.position.z=.68;rifle.add(gunBarrel);
+const gunSight=new THREE.Mesh(new THREE.BoxGeometry(.08,.09,.16),mat(0x111111));gunSight.position.set(0,.12,.2);rifle.add(gunSight);
+const muzzleFlash=new THREE.Mesh(new THREE.ConeGeometry(.17,.42,8),mat(0xffc13b));muzzleFlash.rotation.x=-Math.PI/2;muzzleFlash.position.z=1.18;muzzleFlash.visible=false;rifle.add(muzzleFlash);
 hunter.visible=false;
 // track decoration pool
 let moving=[];
@@ -482,7 +463,8 @@ function addObstacle(lane,z,type){
  moving.push(g);return g;
 }
 function addCoin(lane,z){let g=new THREE.Group();g.position.set([-1.5,0,1.5][lane],1.25,z);let c=new THREE.Mesh(new THREE.TorusGeometry(.28,.09,8,18),gold);c.rotation.y=Math.PI/2;g.add(c);let dot=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),mat(0xfff1a1));dot.position.z=.02;g.add(dot);g.userData={type:'coin',lane,hit:false};scene.add(g);moving.push(g)}
-let saved={coins:0,hatOwned:false,hatEquipped:false,ownedHats:[],equippedHat:'',goatColour:'purple',goldColourOwned:false,profileLogo:'goat_plain'};
+let saved={coins:0,hatOwned:false,hatEquipped:false,ownedHats:[],equippedHat:'',goatColour:'purple',goldColourOwned:false,profileLogo:'🐐'};
+let profileLogo=saved.profileLogo||'🐐';
 try{
  const stored=localStorage.getItem('paathuRunSave');
  if(stored)saved={...saved,...JSON.parse(stored)};
@@ -497,9 +479,6 @@ let equippedHat=saved.equippedHat||((saved.hatEquipped&&ownedHats.includes('chri
 if(!ownedHats.includes(equippedHat))equippedHat='';
 let goatColour=saved.goatColour||'purple';
 let goldColourOwned=!!saved.goldColourOwned;
-let profileLogo=saved.profileLogo||'goat_plain';
-const profileLogos=[{id:'goat_plain',name:'Classic goat',icon:'🐐'},{id:'goat_glasses',name:'Cool glasses',icon:'🐐🕶️'},{id:'goat_beard',name:'Bearded goat',icon:'🐐🧔'},{id:'goat_cap',name:'Cap goat',icon:'🐐🧢'},{id:'goat_crown',name:'Royal goat',icon:'🐐👑'}];
-window.updatePaathuHudIdentity=function(){const choice=profileLogos.find(item=>item.id===profileLogo)||profileLogos[0];document.getElementById('hudLogo').textContent=choice.icon;};
 const goatColours=[
  {id:'purple',name:'Purple',hex:0xb34be8},
  {id:'white',name:'White',hex:0xf2eee8},
@@ -522,7 +501,7 @@ function applyGoatColour(){
  else {purple.metalness=0;purple.roughness=.85;lightPurple.metalness=0;lightPurple.roughness=.85;}
 }
 function saveProgress(){
- const data=JSON.stringify({coins,hatOwned:ownedHats.includes('christmas'),hatEquipped:equippedHat==='christmas',ownedHats,equippedHat,goatColour,goldColourOwned,profileLogo});
+ const data=JSON.stringify({coins,profileLogo,hatOwned:ownedHats.includes('christmas'),hatEquipped:equippedHat==='christmas',ownedHats,equippedHat,goatColour,goldColourOwned});
  try{localStorage.setItem('paathuRunSave',data);}
  catch(e){console.warn('Browser storage is unavailable; progress may not persist.',e)}
 }
@@ -559,6 +538,9 @@ function renderShop(){
  applyEquippedHat();
 }
 function renderSettings(){
+ const logoHost=document.getElementById('profileLogoGrid');
+ if(logoHost){logoHost.replaceChildren();const logos=['🐐','🐐🕶️','🐐🎩','🐐🧢','🐐👑'];logos.forEach(icon=>{const b=document.createElement('button');b.className='colourChoice'+(profileLogo===icon?' selected':'');b.textContent=icon;b.addEventListener('click',()=>{profileLogo=icon;saveProgress();renderSettings();updateHudPlayer();});logoHost.appendChild(b);});}
+
  const host=document.getElementById('colourGrid');host.innerHTML='';
  goatColours.forEach(choice=>{
    if(choice.id==='gold'&&!goldColourOwned)return;
@@ -568,13 +550,6 @@ function renderSettings(){
    button.append(dot,label);
    button.addEventListener('click',()=>{goatColour=choice.id;applyGoatColour();saveProgress();renderSettings();});
    host.appendChild(button);
- });
- const profileHost=document.getElementById('profileGrid');profileHost.innerHTML='';
- profileLogos.forEach(choice=>{
-   const button=document.createElement('button');button.className='profileChoice'+(profileLogo===choice.id?' selected':'');
-   button.textContent=choice.icon+' '+choice.name;
-   button.addEventListener('click',()=>{profileLogo=choice.id;saveProgress();renderSettings();window.updatePaathuHudIdentity();});
-   profileHost.appendChild(button);
  });
  const goldHost=document.getElementById('goldColourAction');goldHost.innerHTML='';
  if(goldColourOwned){
@@ -588,6 +563,7 @@ function renderSettings(){
 }
 function refreshShop(){renderShop();}
 const scoreEl=document.getElementById('score'),coinEl=document.getElementById('coins'),title=document.getElementById('title'),toast=document.getElementById('toast');
+function updateHudPlayer(){const n=window.PaathuAccount?.username||'GUEST';document.getElementById('hudPlayer').textContent=profileLogo+' '+n;}
 function say(t){toast.textContent=t;toast.style.opacity=1;clearTimeout(say.timer);say.timer=setTimeout(()=>toast.style.opacity=0,650)}
 document.getElementById('shopOpen').addEventListener('click',()=>{
  if(running)running=false;
@@ -601,12 +577,14 @@ document.getElementById('settingsOpen').addEventListener('click',()=>{
  if(running)running=false;
  renderSettings();document.getElementById('settingsModal').style.display='flex';
 });
-document.getElementById('settingsAccountButton').addEventListener('click',()=>document.getElementById('accountOpen').click());
-document.getElementById('settingsLeaderboardButton').addEventListener('click',()=>document.getElementById('leaderboardOpen').click());
+document.getElementById('settingsAccountButton').addEventListener('click',()=>{document.getElementById('settingsModal').style.display='none';document.getElementById('accountModal').style.display='flex';});
 document.getElementById('settingsClose').addEventListener('click',()=>{
  document.getElementById('settingsModal').style.display='none';
  if(!ended&&document.getElementById('title').style.display==='none'){running=true;last=performance.now();}
 });
+document.getElementById('pauseGameButton').addEventListener('click',()=>{if(!running)return;running=false;document.getElementById('pauseOverlay').style.display='flex';});
+document.getElementById('resumeGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';running=true;last=performance.now();});
+document.getElementById('quitGame').addEventListener('click',()=>{document.getElementById('pauseOverlay').style.display='none';crash();});
 function move(d){
  if(!running)return;
  if(d==='left'){const old=lane;lane=Math.max(0,lane-1);if(lane!==old)laneLean=-1;}
@@ -614,38 +592,25 @@ function move(d){
  if(d==='jump'&&jumpY<.05&&sliding<=0)jumpV=8.7;
  if(d==='slide'&&jumpY<.15)sliding=.72;
 }
-applyGoatColour();refreshShop();renderSettings();window.updatePaathuHudIdentity();
+applyGoatColour();refreshShop();renderSettings();
 addEventListener('pagehide',saveProgress);
 document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();move(b.dataset.move)}));
 let sx=0,sy=0;renderer.domElement.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
 renderer.domElement.addEventListener('pointerup',e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<22)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy<0?'jump':'slide')});
 addEventListener('keydown',e=>{if(['ArrowLeft','a','ArrowRight','d','ArrowUp','w',' ','ArrowDown','s'].includes(e.key)){e.preventDefault();move(({ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'jump',w:'jump',' ':'jump',ArrowDown:'slide',s:'slide'})[e.key])}});
-function reset(){document.body.classList.remove('playing');document.getElementById('pauseOverlay').style.display='none';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
+function reset(){document.getElementById('pauseOverlay').style.display='none';document.getElementById('hunterWarning').style.display='none';for(let o of moving)scene.remove(o);moving=[];roadsideProps.forEach(item=>{item.group.position.z=item.initialZ;});
  overhead.forEach(item=>{item.group.position.z=item.initialZ;});
- trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;hunterTargetLane=-1;hunterShotDone=false;document.getElementById('hunterWarning').style.display='none';goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';coinEl.textContent=coins;refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
-let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterTargetLane=-1,hunterShotDone=false;
-function finishStory(){
- title.classList.remove('story-mode');document.body.classList.remove('story-intro');
- title.style.display='none';
- hunter.visible=false;
- running=true;
- document.body.classList.add('playing');
- hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
- document.getElementById('hud').style.display='flex';
- document.getElementById('controls').style.display='flex';
- last=performance.now();
-}
+ trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
+let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0,hunterShots=0,hunterTargetLane=1;
 function start(){
- reset();running=false;document.body.classList.remove('playing');
- title.classList.add('story-mode');document.body.classList.add('story-intro');
- title.querySelector('h1').textContent='A QUIET FOREST...';
+ reset();running=false;document.body.classList.add('playing');document.getElementById('storySkip').style.display='block';title.querySelector('h1').textContent='A QUIET FOREST...';
  document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
  hunter.visible=false;
  const started=performance.now();last=started;
- let storyFinished=false;
  function reveal(now){
-   if(storyFinished || title.style.display==='none')return;
+   if(title.style.display==='none')return;
    const elapsed=now-started;
+   // Give each story beat enough time to read before changing the screen.
    if(elapsed<2700){
      title.querySelector('h1').textContent='A QUIET FOREST...';
      document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
@@ -662,28 +627,24 @@ function start(){
      hunter.visible=true;
      hunter.position.set(0,0,6.9);
    }else{
-     storyFinished=true;finishStory();return;
+     hunter.visible=false;document.getElementById('storySkip').style.display='none';
+     title.style.display='none';running=true;
+     hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
+     document.getElementById('hud').style.display='flex';
+     document.getElementById('controls').style.display='flex';
+     last=performance.now();
+     return;
    }
    requestAnimationFrame(reveal);
  }
- document.getElementById('storySkip').onclick=()=>{if(!storyFinished){storyFinished=true;finishStory();}};
  requestAnimationFrame(reveal);
 }
+document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='flex';last=performance.now();});
 document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
 document.getElementById('titleLeaderboardButton').addEventListener('click',()=>document.getElementById('leaderboardOpen').click());
 document.getElementById('titleSettingsButton').addEventListener('click',()=>document.getElementById('settingsOpen').click());
 
-let paused=false;
-document.getElementById('pauseGameButton').addEventListener('click',()=>{
- if(!running)return;
- running=false;paused=true;document.getElementById('pauseOverlay').style.display='flex';
-});
-document.getElementById('resumeGameButton').addEventListener('click',()=>{
- if(!paused)return;
- paused=false;document.getElementById('pauseOverlay').style.display='none';
- running=true;last=performance.now();
-});
-function crash(){running=false;ended=true;document.getElementById('hunterWarning').style.display='none';document.body.classList.remove('playing');document.getElementById('pauseOverlay').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
+function crash(){running=false;ended=true;document.body.classList.remove('playing');document.getElementById('hunterWarning').style.display='none';document.getElementById('storySkip').style.display='none';document.getElementById('hud').style.display='none';document.getElementById('controls').style.display='none';title.style.display='flex';title.querySelector('h1').textContent='GAME OVER';document.getElementById('titleSub').textContent=`${Math.floor(score)} m  •  ${coins} coins`;if(window.PaathuAccount?.submitBestRun)window.PaathuAccount.submitBestRun(Math.floor(score));}
 function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000||0,.04);last=t;
  if(running){
  // Road markings and scenery stream toward the goat to sell forward motion.
@@ -693,32 +654,28 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  for(const item of overhead){item.group.position.z+=speed*dt;if(item.group.position.z>12)item.group.position.z-=128;}
  for(const cloud of clouds){cloud.position.x+=Math.sin(t*.00025+cloud.position.z)*dt*.08;}
  tail.rotation.x=Math.sin(t*.018)*.28;
- // The Hunter only appears briefly now and then, like a distant pursuer.
- // He runs into view, hangs back for a moment, then falls out of sight.
+ // Hunter chase lasts roughly 10 seconds. A flashing warning gives time to change lanes before each shot.
  if(hunterPhase==='hidden'){
    hunter.visible=false;hunterCooldown-=dt;
-   if(hunterCooldown<=0){hunterPhase='enter';hunterPhaseTime=0;hunterTargetLane=-1;hunterShotDone=false;hunter.visible=true;hunter.position.set(goat.position.x*.5,0,12.5);}
+   if(hunterCooldown<=0){hunterPhase='enter';hunterPhaseTime=0;hunter.visible=true;hunter.position.set(goat.position.x*.5,0,12.5);hunterShots=0;hunterTargetLane=lane;}
  }else{
    hunterPhaseTime+=dt;hunter.visible=true;
    hunter.position.x=THREE.MathUtils.damp(hunter.position.x,goat.position.x*.55,2.5,dt);
    hunter.rotation.z=Math.sin(t*.014)*.045;
    if(hunterPhase==='enter'){
      hunter.position.z=THREE.MathUtils.damp(hunter.position.z,7.0,2.2,dt);
-     if(hunterPhaseTime>2.0){hunterPhase='linger';hunterPhaseTime=0;}
-   }else if(hunterPhase==='linger'){
-     hunter.position.z=7.0+Math.sin(t*.009)*.12;
-     if(hunterPhaseTime>1.0&&hunterTargetLane<0){hunterTargetLane=lane;document.getElementById('hunterWarning').style.display='block';}
-     if(hunterPhaseTime>2.5&&!hunterShotDone){
-       hunterShotDone=true;document.getElementById('hunterWarning').style.display='none';
-       if(lane===hunterTargetLane){say('HUNTER HIT!');crash();}else say('SHOT DODGED!');
-     }
-     if(hunterPhaseTime>5.0){document.getElementById('hunterWarning').style.display='none';hunterPhase='exit';hunterPhaseTime=0;}
+     if(hunterPhaseTime>2){hunterPhase='warning';hunterPhaseTime=0;}
+   }else if(hunterPhase==='warning'){
+     hunter.position.z=7.0;document.getElementById('hunterWarning').style.display='block';
+     if(hunterPhaseTime>1.25){document.getElementById('hunterWarning').style.display='none';muzzleFlash.visible=true;setTimeout(()=>{muzzleFlash.visible=false},180);if(lane===hunterTargetLane)crash();hunterPhase='aftershot';hunterPhaseTime=0;}
+   }else if(hunterPhase==='aftershot'){
+     hunter.position.z=7.0; if(hunterPhaseTime>1.4){hunterShots++;if(hunterShots>=3){hunterPhase='exit';hunterPhaseTime=0;}else{hunterTargetLane=lane;hunterPhase='warning';hunterPhaseTime=0;}}
    }else if(hunterPhase==='exit'){
-     hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
-     if(hunterPhaseTime>2.3){hunterPhase='hidden';hunter.visible=false;hunterCooldown=17+Math.random()*13;hunterTargetLane=-1;}
+     document.getElementById('hunterWarning').style.display='none';hunter.position.z=THREE.MathUtils.damp(hunter.position.z,13.5,2.6,dt);
+     if(hunterPhaseTime>2){hunterPhase='hidden';hunter.visible=false;hunterCooldown=15+Math.random()*8;}
    }
  }
- goatMixer.update(dt);
+ if(goatMixer)goatMixer.update(dt);
  if(goatModel){
    goatModelRoot.position.y=Math.sin(t*.018)*.035;
    goatModelRoot.rotation.z=Math.sin(t*.006)*.012;
@@ -732,7 +689,7 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  score+=dt*speed*.65;
  // Difficulty rises in clear 500m stages rather than accelerating constantly.
  const stage=Math.floor(score/250);
- speed=Math.min(27,15+stage*.8);
+ speed=Math.min(32,15+stage*1.15);
  scoreEl.textContent=Math.floor(score);
  goat.position.x=THREE.MathUtils.damp(goat.position.x,[-1.5,0,1.5][lane],16,dt);
  laneLean=THREE.MathUtils.damp(laneLean,0,5.5,dt);
@@ -751,18 +708,10 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  spawn-=dt;coinSpawn-=dt;
  if(spawn<=0){let l=Math.floor(Math.random()*3),types=['rock','rock','log','crate','branch','stump','fallen_branch','mushrooms','boulder','roots','giant_boulder','fallen_tree','thorn_wall'];addObstacle(l,-75,types[Math.floor(Math.random()*types.length)]);spawn=Math.max(.92,1.48-(speed-15)*.025)}
  if(Math.random()<dt*.12){let wl=Math.floor(Math.random()*3);addObstacle(wl,-82,'water')}
- if(coinSpawn<=0){
-    const pattern=Math.floor(Math.random()*5),startLane=Math.floor(Math.random()*3),z0=-55;
-    if(pattern===0){const count=3+Math.floor(Math.random()*5);for(let i=0;i<count;i++)addCoin(startLane,z0-i*2.25);}
-    else if(pattern===1){const other=startLane===2?1:startLane+1;for(let i=0;i<6;i++)addCoin(i%2===0?startLane:other,z0-i*2.15);}
-    else if(pattern===2){for(let i=0;i<7;i++)addCoin(Math.max(0,Math.min(2,startLane+(i<3?-1:i>4?1:0))),z0-i*2.1);}
-    else if(pattern===3){for(let i=0;i<6;i++)addCoin((startLane+i)%3,z0-i*2.2);}
-    else {for(let i=0;i<5;i++)addCoin(startLane,z0-i*2.3);for(let i=0;i<3;i++)addCoin(startLane===1?(i%2?0:2):1,z0-4-i*2.3);}
-    coinSpawn=1.8+Math.random()*1.7;
-  }
+ if(coinSpawn<=0){const patterns=['line','zigzag','switch','short'];const pattern=patterns[Math.floor(Math.random()*patterns.length)];let l=Math.floor(Math.random()*3);const count=pattern==='short'?3:pattern==='line'?7:6;for(let i=0;i<count;i++){if(pattern==='zigzag'&&i%2)l=(l+1)%3;if(pattern==='switch'&&i===3)l=(l+1+Math.floor(Math.random()*2))%3;addCoin(l,-48-i*2.15);}coinSpawn=1.7+Math.random()*1.7}
  for(let i=moving.length-1;i>=0;i--){let o=moving[i];o.position.z+=speed*dt;if(o.userData.type==='coin')o.rotation.y+=dt*3;
  if(o.position.z>2.3&&!o.userData.hit){o.userData.hit=true;let same=Math.abs(goat.position.x-[-1.5,0,1.5][o.userData.lane])<.65;
- if(o.userData.type==='coin'){if(same&&Math.abs(o.position.z-3)<1.1){coins++;coinEl.textContent=coins;saveProgress();refreshShop();say('+1 🪙')}}else if(o.userData.type!=='water'&&same&&o.position.z>1.5&&o.position.z<4.5){let laneChangeOnly=['giant_boulder','fallen_tree','thorn_wall','boulder','crate','train'].includes(o.userData.type);let safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:jumpY>(['log','stump','mushrooms','roots','fallen_branch','rock'].includes(o.userData.type)?.9:.85));if(!safe)crash();else say('DODGED!')}}
+ if(o.userData.type==='coin'){if(same&&Math.abs(o.position.z-3)<1.1){coins++;saveProgress();refreshShop();say('+1 🪙')}}else if(o.userData.type!=='water'&&same&&o.position.z>1.5&&o.position.z<4.5){let laneChangeOnly=['rock','crate','stump','fallen_branch','mushrooms','boulder','roots','giant_boulder','fallen_tree','thorn_wall','train'].includes(o.userData.type);let safe=laneChangeOnly?false:(o.userData.type==='branch'?sliding>0:jumpY>(o.userData.type==='log'?.8:.9));if(!safe)crash();else say('DODGED!')}}
  if(o.position.z>9){scene.remove(o);moving.splice(i,1)}}
  }
  renderer.render(scene,camera);
@@ -790,11 +739,10 @@ function updateAccount() {
  el('paathuAccountStatus').textContent = currentUser ? 'Logged in as @' + username : 'Playing as guest';
  el('paathuLogout').style.display = currentUser ? 'block' : 'none';
  el('paathuIdentity').textContent = currentUser ? '👤 @' + username : '👤 GUEST MODE';
- el('hudPlayer').textContent = '🐐 ' + (currentUser ? '@' + username : 'GUEST');
+ window.PaathuAccount.username=currentUser?'@'+username:'GUEST'; const logo=JSON.parse(localStorage.getItem('paathuRunSave')||'{}').profileLogo||'🐐'; const hud=document.getElementById('hudPlayer'); if(hud)hud.textContent=logo+' '+window.PaathuAccount.username;
  el('paathuIdentity').style.display = 'block';
 }
 
-function updateHudIdentity(){if(window.updatePaathuHudIdentity)window.updatePaathuHudIdentity();}
 async function refreshAccount() {
  const {data,error} = await db.auth.getSession();
  if (error) showMessage(error.message);
@@ -909,7 +857,7 @@ el('paathuLeaderboardClose').addEventListener('click', () => {
  el('leaderboardModal').style.display = 'none';
 });
 
-window.PaathuAccount = {
+window.PaathuAccount = {username:'GUEST',
  async submitBestRun(distance) {
   if(!currentUser || !Number.isFinite(distance) || distance<0) return;
   const {data:existing,error:readError}=await db.from('best_runs').select('best_distance').eq('user_id',currentUser.id).maybeSingle();
