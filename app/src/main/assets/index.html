@@ -51,6 +51,39 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
 .settingsCard button{width:100%;margin:5px 0}
 .settingsCard .shopClose{background:#e7eee2;box-shadow:0 4px 0 #9aa99a}
 
+#accountOpen,#leaderboardOpen{
+ position:fixed;right:14px;z-index:20;padding:10px 13px;
+ border:2px solid #b7e58a;border-radius:14px;
+ background:#183b30;color:#fff2a1;font-weight:bold;
+ box-shadow:0 3px 0 #5d9632
+}
+#accountOpen{top:calc(72px + env(safe-area-inset-top,0px))}
+#leaderboardOpen{top:calc(126px + env(safe-area-inset-top,0px))}
+.paathu-overlay{
+ display:none;position:fixed;inset:0;z-index:60;
+ background:#06150fdd;align-items:center;justify-content:center;padding:16px
+}
+.paathu-card{
+ width:min(92vw,390px);max-height:86vh;overflow:auto;
+ background:linear-gradient(160deg,#315f3c,#183b30);
+ border:2px solid #b7e58a;border-radius:22px;
+ padding:22px;color:white;text-align:center
+}
+.paathu-card h2{color:#fff2a1;margin-top:0}
+.paathu-card input{
+ display:block;width:100%;box-sizing:border-box;margin:10px 0;
+ padding:13px;border-radius:10px;border:1px solid #b7e58a;
+ background:#fff;color:#18251c;font-size:16px
+}
+.paathu-card button{
+ width:100%;padding:12px;margin:5px 0;border:0;
+ border-radius:12px;font-weight:bold;font-size:15px
+}
+.paathu-primary{background:#fff2a1;color:#183b30}
+.paathu-secondary{background:#e7eee2;color:#183b30}
+#paathuMessage{font-size:13px;overflow-wrap:anywhere}
+#paathuLeaderboard{text-align:left}
+.paathu-rank{padding:10px;border-bottom:1px solid #ffffff33}
 </style>
 </head>
 <body>
@@ -80,6 +113,32 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
   <div id="colourGrid" class="colourGrid"></div>
   <div id="goldColourAction"></div>
   <button id="settingsClose" class="shopClose">CLOSE</button>
+ </div>
+</div>
+<button id="accountOpen">👤 ACCOUNT</button>
+<button id="leaderboardOpen">🏆 RANKINGS</button>
+
+<div id="accountModal" class="paathu-overlay">
+ <div class="paathu-card">
+  <h2>PAATHU ACCOUNT</h2>
+  <p id="paathuAccountStatus">Playing as guest</p>
+  <input id="paathuUsername" placeholder="Username (registration)" maxlength="20">
+  <input id="paathuEmail" type="email" placeholder="Email address">
+  <input id="paathuPassword" type="password" placeholder="Password (8+ characters)">
+  <button id="paathuRegister" class="paathu-primary">CREATE ACCOUNT</button>
+  <button id="paathuLogin" class="paathu-primary">LOG IN</button>
+  <button id="paathuGuest" class="paathu-secondary">CONTINUE AS GUEST</button>
+  <button id="paathuLogout" class="paathu-secondary" style="display:none">LOG OUT</button>
+  <p id="paathuMessage"></p>
+  <button id="paathuAccountClose" class="paathu-secondary">CLOSE</button>
+ </div>
+</div>
+
+<div id="leaderboardModal" class="paathu-overlay">
+ <div class="paathu-card">
+  <h2>🏆 GLOBAL LEADERBOARD</h2>
+  <div id="paathuLeaderboard">Loading rankings...</div>
+  <button id="paathuLeaderboardClose" class="paathu-secondary">CLOSE</button>
  </div>
 </div>
 <div id="controls">
@@ -622,6 +681,163 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
 }
 requestAnimationFrame(animate);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const db = createClient(
+ 'https://pthtqtfsmnfiduhgigfa.supabase.co',
+ 'sb_publishable_uiq-9KUkV1AMGgGZ7Zf2Xg_RnMZM3Jx'
+);
+
+const el = id => document.getElementById(id);
+let currentUser = null;
+
+function showMessage(message) {
+ el('paathuMessage').textContent = message;
+}
+
+function updateAccount() {
+ el('paathuAccountStatus').textContent = currentUser
+  ? 'Logged in: ' + (currentUser.user_metadata?.username || currentUser.email)
+  : 'Playing as guest';
+ el('paathuLogout').style.display = currentUser ? 'block' : 'none';
+}
+
+async function refreshAccount() {
+ const {data,error} = await db.auth.getSession();
+ if (error) showMessage(error.message);
+ currentUser = data?.session?.user || null;
+ updateAccount();
+}
+
+el('accountOpen').addEventListener('click', async () => {
+ await refreshAccount();
+ el('accountModal').style.display = 'flex';
+ showMessage('');
+});
+
+el('paathuAccountClose').addEventListener('click', () => {
+ el('accountModal').style.display = 'none';
+});
+
+el('paathuGuest').addEventListener('click', () => {
+ localStorage.setItem('paathuRunMode','guest');
+ el('accountModal').style.display = 'none';
+ showMessage('');
+});
+
+el('paathuRegister').addEventListener('click', async () => {
+ const email = el('paathuEmail').value.trim();
+ const password = el('paathuPassword').value;
+ const username = el('paathuUsername').value.trim();
+
+ if (!email || password.length < 8 ||
+     !/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+  showMessage('Enter a valid email, password (8+ characters) and username (3–20 letters, numbers or _).');
+  return;
+ }
+
+ showMessage('Creating account...');
+
+ const {data,error} = await db.auth.signUp({
+  email,
+  password,
+  options:{data:{username}}
+ });
+
+ if (error) {
+  showMessage(error.message);
+  return;
+ }
+
+ currentUser = data.session ? data.user : null;
+ updateAccount();
+
+ showMessage(data.session
+  ? 'Account created! You are logged in.'
+  : 'Account created! Check your email to confirm, then log in.');
+});
+
+el('paathuLogin').addEventListener('click', async () => {
+ const email = el('paathuEmail').value.trim();
+ const password = el('paathuPassword').value;
+
+ if (!email || !password) {
+  showMessage('Enter your email and password.');
+  return;
+ }
+
+ showMessage('Logging in...');
+
+ const {data,error} = await db.auth.signInWithPassword({email,password});
+
+ if (error) {
+  showMessage(error.message);
+  return;
+ }
+
+ currentUser = data.user;
+ localStorage.setItem('paathuRunMode','account');
+ updateAccount();
+ showMessage('Welcome back!');
+});
+
+el('paathuLogout').addEventListener('click', async () => {
+ const {error} = await db.auth.signOut();
+
+ if (error) {
+  showMessage(error.message);
+  return;
+ }
+
+ currentUser = null;
+ updateAccount();
+ showMessage('Logged out. Your local game progress remains on this device.');
+});
+
+el('leaderboardOpen').addEventListener('click', async () => {
+ el('leaderboardModal').style.display = 'flex';
+ const target = el('paathuLeaderboard');
+ target.textContent = 'Loading rankings...';
+
+ const {data,error} = await db
+  .from('global_leaderboard')
+  .select('rank,username,best_distance')
+  .order('rank',{ascending:true})
+  .limit(50);
+
+ target.replaceChildren();
+
+ if (error) {
+  target.textContent = 'Could not load rankings: ' + error.message;
+  return;
+ }
+
+ if (!data?.length) {
+  target.textContent = 'No players yet. Be the first to set a record!';
+  return;
+ }
+
+ data.forEach(player => {
+  const row = document.createElement('div');
+  row.className = 'paathu-rank';
+  row.textContent = '#' + player.rank + '  ' +
+   player.username + ' — ' + player.best_distance + ' m';
+  target.appendChild(row);
+ });
+});
+
+el('paathuLeaderboardClose').addEventListener('click', () => {
+ el('leaderboardModal').style.display = 'none';
+});
+
+db.auth.onAuthStateChange((_event,session) => {
+ currentUser = session?.user || null;
+ updateAccount();
+});
+
+refreshAccount();
 </script>
 </body>
 </html>
