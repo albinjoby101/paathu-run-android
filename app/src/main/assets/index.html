@@ -17,7 +17,8 @@
 #storySkip{display:none;margin:20px auto 0;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:0 4px 0 #10251d}
 #title.story-mode .panel>div:first-child,#title.story-mode .menu-actions{display:none}
 #title.story-mode #storySkip{display:block}
-body.playing #paathuIdentity,body.playing #shopOpen,body.playing #settingsOpen{display:none!important}
+body.playing #paathuIdentity,body.playing #shopOpen,body.playing #settingsOpen,body.playing #accountOpen,body.playing #leaderboardOpen{display:none!important}
+body.story-intro #accountOpen,body.story-intro #leaderboardOpen,body.story-intro #paathuIdentity,body.story-intro #shopOpen,body.story-intro #settingsOpen{display:none!important}
 .pill{background:#06150fc9;border:1px solid #ffffff35;border-radius:18px;padding:7px 13px;font-weight:800}
 #title{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#172b3a22,#172b3a55);text-align:center;cursor:pointer}
 .panel{width:min(92vw,440px);padding:20px 12px;background:transparent;border:0;box-shadow:none}
@@ -119,6 +120,7 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
    <button id="titleLeaderboardButton" class="menu-alt">🏆 GLOBAL LEADERBOARD</button>
    <button id="titleSettingsButton" class="menu-alt">⚙️ SETTINGS</button>
   </div>
+  <button id="storySkip">SKIP STORY ▶</button>
 </div></div>
 <div id="paathuIdentity">GUEST MODE</div>
 <button id="shopOpen" aria-label="Open shop">🎅 SHOP</button>
@@ -597,7 +599,7 @@ function reset(){document.body.classList.remove('playing');document.getElementBy
  trackScroll.forEach((sleeper,i)=>{sleeper.position.z=5-i*3.5;});laneDashes.forEach((dash,i)=>{dash.position.z=4-i*5;});lane=1;laneLean=0;jumpY=0;jumpV=0;sliding=0;score=0;speed=15;spawn=1.35;coinSpawn=.8;ended=false;hunter.visible=false;hunter.position.set(0,0,7.1);hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;goat.position.y=0;goat.scale.y=1;scoreEl.textContent='0';coinEl.textContent=coins;refreshShop();title.querySelector('h1').textContent='PAATHU RUN';document.getElementById('titleSub').textContent='TAP TO PLAY';}
 let hunterCooldown=19,hunterPhase='hidden',hunterPhaseTime=0;
 function finishStory(){
- title.classList.remove('story-mode');
+ title.classList.remove('story-mode');document.body.classList.remove('story-intro');
  title.style.display='none';
  hunter.visible=false;
  running=true;
@@ -609,7 +611,7 @@ function finishStory(){
 }
 function start(){
  reset();running=false;document.body.classList.remove('playing');
- title.classList.add('story-mode');
+ title.classList.add('story-mode');document.body.classList.add('story-intro');
  title.querySelector('h1').textContent='A QUIET FOREST...';
  document.getElementById('titleSub').textContent='Paathu wanders along a peaceful mountain trail.';
  hunter.visible=false;
