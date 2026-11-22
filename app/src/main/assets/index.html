@@ -118,7 +118,8 @@ button:active{transform:translateY(3px);box-shadow:0 2px 0 #5d9632}
  <button id="pauseGameButton">Ⅱ</button>
 </div>
 <div id="pauseOverlay"><div class="pause-card"><h2>PAUSED</h2><p>Take a breath, Paathu.</p><button id="resumeGameButton">▶ RESUME</button></div></div>
-<div id="toast">NICE!</div>\n<div id="hunterWarning">⚠️ HUNTER AIMING — CHANGE LANE!</div>
+<div id="toast">NICE!</div>
+<div id="hunterWarning">⚠️ HUNTER AIMING — CHANGE LANE!</div>
 <div id="title"><div class="panel">
   <div style="font-size:clamp(76px,20vw,112px);filter:drop-shadow(0 8px 8px #44205b66)">🐐</div>
   <h1>PAATHU RUN</h1>
@@ -495,7 +496,9 @@ if(saved.hatOwned&&!ownedHats.includes('christmas'))ownedHats.push('christmas');
 let equippedHat=saved.equippedHat||((saved.hatEquipped&&ownedHats.includes('christmas'))?'christmas':'');
 if(!ownedHats.includes(equippedHat))equippedHat='';
 let goatColour=saved.goatColour||'purple';
-let goldColourOwned=!!saved.goldColourOwned;\nlet profileLogo=saved.profileLogo||'goat_plain';\nconst profileLogos=[{id:'goat_plain',name:'Classic goat',icon:'🐐'},{id:'goat_glasses',name:'Cool glasses',icon:'🐐🕶️'},{id:'goat_beard',name:'Bearded goat',icon:'🐐🧔'},{id:'goat_cap',name:'Cap goat',icon:'🐐🧢'},{id:'goat_crown',name:'Royal goat',icon:'🐐👑'}];
+let goldColourOwned=!!saved.goldColourOwned;
+let profileLogo=saved.profileLogo||'goat_plain';
+const profileLogos=[{id:'goat_plain',name:'Classic goat',icon:'🐐'},{id:'goat_glasses',name:'Cool glasses',icon:'🐐🕶️'},{id:'goat_beard',name:'Bearded goat',icon:'🐐🧔'},{id:'goat_cap',name:'Cap goat',icon:'🐐🧢'},{id:'goat_crown',name:'Royal goat',icon:'🐐👑'}];
 window.updatePaathuHudIdentity=function(){const choice=profileLogos.find(item=>item.id===profileLogo)||profileLogos[0];document.getElementById('hudLogo').textContent=choice.icon;};
 const goatColours=[
  {id:'purple',name:'Purple',hex:0xb34be8},
@@ -692,7 +695,7 @@ function animate(t){requestAnimationFrame(animate);let dt=Math.min((t-last)/1000
  tail.rotation.x=Math.sin(t*.018)*.28;
  // The Hunter only appears briefly now and then, like a distant pursuer.
  // He runs into view, hangs back for a moment, then falls out of sight.
- if if(hunterPhase==='hidden'){
+ if(hunterPhase==='hidden'){
    hunter.visible=false;hunterCooldown-=dt;
    if(hunterCooldown<=0){hunterPhase='enter';hunterPhaseTime=0;hunterTargetLane=-1;hunterShotDone=false;hunter.visible=true;hunter.position.set(goat.position.x*.5,0,12.5);}
  }else{
