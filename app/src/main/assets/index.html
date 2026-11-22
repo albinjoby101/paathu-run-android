@@ -26,7 +26,7 @@ body.playing #paathuIdentity{display:none!important}
 #hudPlayer{flex:0 1 29%;max-width:29%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #hud .pill:nth-child(2){flex:0 1 auto;white-space:nowrap}
 #pauseGameButton{flex:0 0 42px;padding:5px 8px}
-#controls{display:none;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
+#controls{display:none!important;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;justify-content:space-between;padding:0 16px;pointer-events:none}
 .pad{display:flex;gap:8px;pointer-events:auto}
 .pad button{width:55px;height:52px;padding:0;background:#10251dd9;color:white;border:1px solid #ffffff45;box-shadow:none;font-size:23px}
 #pauseGameButton{pointer-events:auto;padding:5px 14px;font-size:20px;border-radius:12px;background:#183b30;color:#fff2a1;border:1px solid #b7e58a;box-shadow:none}
@@ -637,7 +637,7 @@ function start(){
      title.classList.remove('story');title.style.display='none';running=true;
      hunterCooldown=18+Math.random()*7;hunterPhase='hidden';hunterPhaseTime=0;
      document.getElementById('hud').style.display='flex';
-     document.getElementById('controls').style.display='flex';
+     document.getElementById('controls').style.display='none';
      last=performance.now();
      return;
    }
@@ -645,7 +645,7 @@ function start(){
  }
  requestAnimationFrame(reveal);
 }
-document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='flex';last=performance.now();});
+document.getElementById('storySkip').addEventListener('click',()=>{document.getElementById('storySkip').style.display='none';hunter.visible=false;title.classList.remove('story');title.style.display='none';running=true;hunterCooldown=10;hunterPhase='hidden';hunterPhaseTime=0;document.getElementById('hud').style.display='flex';document.getElementById('controls').style.display='none';last=performance.now();});
 document.getElementById('startGameButton').addEventListener('click',()=>{if(!running)start()});
 /* Leaderboard button is wired by the account controller below. */
 document.getElementById('titleSettingsButton').addEventListener('click',()=>{renderSettings();document.getElementById('settingsModal').style.display='flex';});
